@@ -82,11 +82,11 @@ function homeView(){
 }
 
 // ---------- teacher ----------
-var TABS=[['info','১. ব্যক্তিগত তথ্য'],['events','২. চাকরির ঘটনা'],['leave','৩. ছুটির হিসাব'],['pages','৪. বইয়ের পাতা'],['da','৫. বেতন ও DA']];
+var TABS=[['info','১. ব্যক্তিগত তথ্য'],['schools','🏫 স্কুল'],['paytab','💰 বেতনের সারি'],['events','২. চাকরির ঘটনা'],['leave','৩. ছুটির হিসাব'],['pages','৪. বইয়ের পাতা'],['da','৫. বেতন ও DA']];
 function teacherView(){
   var T=A.T[A.tid]; if(!T){ A.view='home'; return homeView(); }
   var h='<div class="tabs">'+TABS.map(function(t){ return '<button class="tab'+(A.tab===t[0]?' on':'')+'" data-act="tab" data-tab="'+t[0]+'">'+t[1]+'</button>'; }).join('')+'</div><div class="pad">';
-  if(A.tab==='info') h+=infoForm(T); else if(A.tab==='events') h+=eventsView(T); else if(A.tab==='leave') h+=leaveView(T); else if(A.tab==='da') h+=daView(T); else h+=pagesView(T);
+  if(A.tab==='info') h+=infoForm(T); else if(A.tab==='schools') h+=schoolsView(T); else if(A.tab==='paytab') h+=payTableView(T); else if(A.tab==='events') h+=eventsView(T); else if(A.tab==='leave') h+=leaveView(T); else if(A.tab==='da') h+=daView(T); else h+=pagesView(T);
   return h+'</div>';
 }
 function fld(lbl,key,val,type,hint,extra){
@@ -336,6 +336,8 @@ document.addEventListener('click',function(ev){
   else if(act==='backup'){ doBackup(); }
   else if(act==='restore'){ doRestore(); }
   else if(act==='reloadApp'){ location.reload(); }
+  else if(act==='addSlot'){ var Ts=A.T[A.tid]; Ts.extraSlots=(Ts.extraSlots||0)+1; render(); scheduleSave('T',A.tid); }
+  else if(act==='addPayRow'){ var Tp=A.T[A.tid]; var last=SB.sortEvents(Tp.events||[]).filter(function(e){return SB.PAYTYPES[e.type];}).pop(); var y=last?(+last.date.slice(0,4)+(last.date.slice(5)>='07-01'?1:0)):new Date().getFullYear(); Tp.events.push({id:uid(), seq:Date.now(), type:'inc', date:y+'-07-01'}); render(); scheduleSave('T',A.tid); }
   else if(act==='addD'){ A.S.da=A.S.da||[]; A.S.da.push({from:SB.todayStr(), pct:'', go:''}); render(); scheduleSave('S'); }
   else if(act==='delD'){ var di=+b.getAttribute('data-i'); ask('এই DA লাইনটা মুছবেন?',function(){ A.S.da.splice(di,1); render(); scheduleSave('S'); }); }
   else if(act==='readDA'){ pickFile(importDA); }
@@ -360,6 +362,8 @@ document.addEventListener('click',function(ev){
 });
 function setPath(o,path,v){ var p=path.split('.'); while(p.length>1){ o=o[p.shift()]; } o[p[0]]=v; }
 document.addEventListener('input',function(ev){
+  var tS=ev.target; if(tS.hasAttribute && tS.hasAttribute('data-sk')){ if(tS.type==='date'||tS.tagName==='SELECT') return; slotUpdate(+tS.getAttribute('data-si'),tS.getAttribute('data-sk'),tS.value); return; }
+  if(tS.hasAttribute && tS.hasAttribute('data-pe')){ if(tS.type==='date'||tS.tagName==='SELECT') return; var Tq=A.T[A.tid], eq=(Tq.events||[]).filter(function(x){return x.id===tS.getAttribute('data-pe');})[0]; if(eq){ var fq=tS.getAttribute('data-pf'); if(tS.value==='') delete eq[fq]; else eq[fq]=tS.value; scheduleSave('T',A.tid); } return; }
   var t=ev.target, form=t.closest('[data-form]');
   if(t.hasAttribute('data-lk')){ var T=A.T[A.tid]; T.leave=T.leave||{ov:{},notes:{}}; T.leave.ov=T.leave.ov||{}; var k=t.getAttribute('data-lk'); var o=T.leave.ov[k]=T.leave.ov[k]||{}; o[t.getAttribute('data-f')]=t.value.trim(); scheduleSave('T',A.tid); return; }
   if(t.hasAttribute('data-lnote')){ var T5=A.T[A.tid]; T5.leave=T5.leave||{ov:{},notes:{}}; T5.leave.notes=T5.leave.notes||{}; T5.leave.notes[t.getAttribute('data-lnote')]=t.value; scheduleSave('T',A.tid); return; }
@@ -371,7 +375,9 @@ document.addEventListener('input',function(ev){
   else if(f==='D'){ var D=A.S.da[+form.getAttribute('data-i')]; D[k2]=(k2==='pct'?(v===''?'':+v):v); scheduleSave('S'); }
   else if(f==='L'){ var L=A.S.levels[+form.getAttribute('data-i')]; if(k2==='cells'){ L.cells=v.split(/[^0-9]+/).filter(Boolean).map(Number); } else L[k2]=v; scheduleSave('S'); }
 });
-document.addEventListener('change',function(ev){ var t0=ev.target; if(t0.hasAttribute && t0.hasAttribute('data-pk') && IMP && IMP.R){ var ii=+t0.getAttribute('data-pk'); IMP.R.pays[ii].kind=t0.value; var dlgb=$('#dlg .dlgb'), st0=dlgb?dlgb.scrollTop:0; snapshotImport(); drawTeacherImport(); var nb=$('#dlg .dlgb'); if(nb) nb.scrollTop=st0; return; } if(ev.target.tagName==='SELECT') ev.target.dispatchEvent(new Event('input',{bubbles:true})); });
+document.addEventListener('change',function(ev){ var t0=ev.target;
+  if(t0.hasAttribute && t0.hasAttribute('data-sk')){ var openIdx=[].map.call(document.querySelectorAll('details.scard'),function(d,i){return d.open?i:-1;}).filter(function(i){return i>=0;}); var rr=slotUpdate(+t0.getAttribute('data-si'),t0.getAttribute('data-sk'),t0.value); if(rr==='rerender' || t0.type==='date' || t0.tagName==='SELECT'){ var y=window.scrollY; render(); document.querySelectorAll('details.scard').forEach(function(d,i){ if(openIdx.indexOf(i)>=0) d.open=true; }); window.scrollTo(0,y); } return; }
+  if(t0.hasAttribute && t0.hasAttribute('data-pe')){ var Tq=A.T[A.tid], eq=(Tq.events||[]).filter(function(x){return x.id===t0.getAttribute('data-pe');})[0]; if(eq){ var fq=t0.getAttribute('data-pf'); if(t0.value==='') delete eq[fq]; else eq[fq]=t0.value; scheduleSave('T',A.tid); var y2=window.scrollY; render(); window.scrollTo(0,y2); } return; } if(t0.hasAttribute && t0.hasAttribute('data-pk') && IMP && IMP.R){ var ii=+t0.getAttribute('data-pk'); IMP.R.pays[ii].kind=t0.value; var dlgb=$('#dlg .dlgb'), st0=dlgb?dlgb.scrollTop:0; snapshotImport(); drawTeacherImport(); var nb=$('#dlg .dlgb'); if(nb) nb.scrollTop=st0; return; } if(ev.target.tagName==='SELECT') ev.target.dispatchEvent(new Event('input',{bubbles:true})); });
 window.addEventListener('resize',function(){ if(A.view==='teacher'&&A.tab==='pages') drawPages(); });
 
 // ---------- offline reading (PDF/ছবি) ----------
@@ -524,7 +530,12 @@ function runAutoFill(T){
     if(applied) return;
     if(C.method!=='manual' && (C.factor===''||C.factor==null)){ notes.push(C.name+': গুণক এখনও বসানো হয়নি, তাই এই ফিক্সেশন বাদ রাখলাম। G.O. বেরোলে সেটিংসে গুণক বসিয়ে বোতামটা আবার টিপবেন।'); return; }
     var e={id:uid(), seq:Date.now(), type:'fix', commission:C.name}; applyComm(e);
-    if(C.method==='matrix'){ var lv=A.S.levels.filter(function(L){return L.commission===C.name;}); if(!lv.length){ notes.push(C.name+': এই কমিশনের পে-ম্যাট্রিক্স (লেভেল) বসানো নেই, তাই ফিক্সেশন বাদ রাখলাম।'); return; } e.level=lv[0].id; if(lv.length>1) notes.push(C.name+': লেভেল হিসেবে '+lv[0].name+' ধরেছি — ঠিক না হলে ঘটনাটা খুলে বদলে দিন।'); }
+    if(C.method==='matrix'){ var lv=A.S.levels.filter(function(L){return L.commission===C.name;}); if(!lv.length){ notes.push(C.name+': এই কমিশনের পে-ম্যাট্রিক্স (লেভেল) বসানো নেই, তাই ফিক্সেশন বাদ রাখলাম।'); return; }
+      var jb=SB.sortEvents(T.events).filter(function(x){ return x.type==='join' && x.date<=C.date; }).pop(), byGP=null;
+      SB.sortEvents(T.events).filter(function(x){ return x.type==='join' && x.date<=C.date; }).forEach(function(x){ byGP=levelFromText(x.scale,C.name)||byGP; });
+      var cur=SB.sortEvents(T.events).filter(function(x){ return x.type==='join'; }).map(function(x){ return SB.levelById(A.S,x.sys); }).filter(function(L){ return L && L.commission===C.name; })[0];
+      e.level=byGP||(cur&&cur.id)||lv[0].id; var Lp=SB.levelById(A.S,e.level);
+      if(!byGP && !cur && lv.length>1) notes.push(C.name+': বেতনক্রমে গ্রেড পে লেখা নেই, তাই লেভেল হিসেবে '+Lp.name+' ধরেছি — ভুল হলে “চাকরির ঘটনা”-তে '+SB.fmt(C.date,A.S.dateFmt)+'-এর পে-রিভিশন খুলে লেভেল বদলান (যেমন GP 4800 হলে Level 15)।'); }
     T.events.push(e); added.fix.push(C.name);
   });
   var inc=SB.genIncrements(T,A.S,today); inc.forEach(function(x,i){ x.id=uid(); x.seq=Date.now()+i+1; }); T.events=T.events.concat(inc); added.inc=inc.length;
@@ -744,6 +755,82 @@ function pasteDialog(){
   d.classList.add('on');
   $('#cpPrompt').onclick=function(){ try{ navigator.clipboard.writeText(PASTE_PROMPT).then(function(){ toast('নির্দেশ কপি হয়েছে — এবার Gemini-তে পেস্ট করুন'); },function(){ toast('কপি হয়নি — নিচের “নির্দেশটা দেখুন” থেকে কপি করুন'); }); }catch(e){ toast('কপি হয়নি — নিচের “নির্দেশটা দেখুন” থেকে কপি করুন'); } };
   $('#pasteGo').onclick=function(){ var v=$('#pasteIn').value; if(!v.trim()){ toast('আগে Gemini-র উত্তর পেস্ট করুন'); return; } IMP={R:parsePasted(v)}; drawTeacherImport(); };
+}
+
+// ---------- simple pages: স্কুল (slots) and বেতনের সারি (table) ----------
+var ORD_BN=['প্রথম','দ্বিতীয়','তৃতীয়','চতুর্থ','পঞ্চম','ষষ্ঠ','সপ্তম','অষ্টম','নবম','দশম'];
+function schoolSlots(T){
+  var evs=SB.sortEvents(T.events||[]), joins=evs.filter(function(e){return e.type==='join';});
+  var slots=joins.map(function(j,ix){ var nextJ=joins[ix+1];
+    var rel=evs.filter(function(e){ return (e.type==='release'||e.type==='resign') && e.date>=j.date && (!nextJ || e.date<nextJ.date); })[0];
+    return {join:j, rel:rel}; });
+  var n=Math.max(5,(T.extraSlots||0)+slots.length); while(slots.length<n) slots.push({join:null, rel:null});
+  return slots;
+}
+function sfld(i,lbl,key,val,type,opts,hint){
+  var a=' data-sk="'+key+'" data-si="'+i+'"';
+  var inp= type==='textarea'?'<textarea'+a+' rows="3">'+esc(val||'')+'</textarea>'
+    : type==='select'?'<select'+a+'>'+opts.map(function(o){ return '<option value="'+esc(o[0])+'"'+(String(val||'')===String(o[0])?' selected':'')+'>'+esc(o[1])+'</option>'; }).join('')+'</select>'
+    : '<input'+a+' type="'+(type||'text')+'" value="'+esc(val||'')+'"'+(type==='number'?' inputmode="numeric"':'')+'>';
+  return '<label class="f"><span>'+lbl+'</span>'+inp+(hint?'<small>'+hint+'</small>':'')+'</label>';
+}
+function schoolsView(T){
+  var slots=schoolSlots(T), H=SB.fullHistory(T,A.S).H;
+  var h='<div class="muted sm">প্রতিটা স্কুলের ঘর পূরণ করুন। যে স্কুলে এখনও আছেন, তার “ছাড়ার তারিখ” খালি রাখুন। লিখতে লিখতেই সেভ হয়ে যায়। ইনক্রিমেন্টগুলো পরে “✍ আজ পর্যন্ত লিখে দাও” বা “💰 বেতনের সারি” থেকে বসবে।</div>';
+  slots.forEach(function(s,i){ var j=s.join||{}, r=s.rel||{};
+    var title=(ORD_BN[i]||((i+1)+'তম'))+' স্কুল', sub=j.date?(SB.fmt(j.date,A.S.dateFmt)+' থেকে '+(r.date?SB.fmt(r.date,A.S.dateFmt):'এখনও চলছে')):'এখনও লেখা হয়নি';
+    var relKind=r.type==='resign'?'resign':(r.date?'release':'');
+    h+='<details class="card scard"'+(i===0||j.date?' open':'')+'><summary><b>'+title+'</b> <span class="muted sm">— '+esc(j.school?j.school.split('\n')[0]:'')+' ('+sub+')</span></summary><div class="form">'+
+      sfld(i,'স্কুলের নাম ও পুরো ঠিকানা','school',j.school==='(স্কুলের নাম ও ঠিকানা লিখুন)'?'':j.school,'textarea')+
+      '<div class="g2">'+sfld(i,'পদ','post',j.post||'Assistant Teacher')+sfld(i,'যোগদানের তারিখ','date',j.date,'date')+'</div>'+
+      '<div class="g2">'+sfld(i,'যোগদানের বেতন','pay',j.pay,'number',null,i>0?'খালি রাখলে আগের স্কুলের শেষ বেতন বসবে':'')+sfld(i,'বেতনের হিসাব কোন নিয়মে','sys',j.sys||(i>0?'':'2009'),'select',(i>0?[['','আগের স্কুলের মতোই (সাধারণত এটাই)']]:[]).concat([['2009','ROPA 2009 (3%, 10-এ রাউন্ড)'],['manual','নিজে বসাব (পুরনো স্কেল)']]).concat(levelOpts()))+'</div>'+
+      sfld(i,'বেতনক্রম (কলম 2)','scale',j.scale,'textarea',null,'যেমন PB-4 (Rs. 9000-40500) + GP Rs. 4800 — গ্রেড পে লিখলে অ্যাপ ROPA-2019-এর লেভেল নিজে বুঝবে')+
+      '<div class="g2">'+sfld(i,'পদ (কলম 3)','postStatus',j.postStatus||'Temporary','select',[['Temporary','Temporary'],['Permanent','Permanent']])+sfld(i,'নিয়োগ (কলম 4)','apptStatus',j.apptStatus||'Temporary','select',[['Temporary','Temporary'],['Permanent','Permanent'],['Officiating','Officiating']])+'</div>'+
+      sfld(i,'স্কুলের স্বীকৃতির ইতিহাস','recog',j.recog,'textarea',null,'প্রতি লাইনে একটা — কলম 1-এর নিচে বসবে')+
+      sfld(i,'নিয়োগ, অনুমোদন, মেমো নম্বর ইত্যাদির বিবরণ','extra',j.extra,'textarea',null,'প্রতি লাইনে একটা — কলম 3–7-এ নম্বর দিয়ে বসবে')+
+      '<div class="g2">'+sfld(i,'ছাড়ার তারিখ (এখনও থাকলে খালি)','relDate',r.date,'date')+sfld(i,'কেন ছাড়লেন','relKind',relKind,'select',[['','—'],['release','বদলি / রিলিজ'],['resign','পদত্যাগ (Resignation)']])+'</div>'+
+      sfld(i,'ছাড়ার কারণ যেমন বইয়ে লিখবেন','relReason',r.reason,'text',null,"যেমন Transferred through 'Utsashree'")+
+      '</div></details>'; });
+  h+='<button class="btn" data-act="addSlot">+ আরও একটা স্কুল</button>';
+  return h;
+}
+function sysAt(T,date){ var T2={events:(T.events||[]).filter(function(e){ return e.date<date; })}; if(!T2.events.length) return null;
+  var st=SB.computeHistory(T2,A.S).state; return st.sys==='matrix'?st.level:(st.sys==='2009'?'2009':(st.sys==='manual'?'manual':null)); }
+function levelFromText(txt,comm){ var m=/(?:GP|G\.P\.|Grade\s*Pay)[^0-9]{0,15}(\d{4})/i.exec(txt||''); if(!m) return null;
+  var L=A.S.levels.filter(function(l){ return (!comm||l.commission===comm) && new RegExp('\\b'+m[1]+'\\b').test(l.pre||''); }); return L[0]?L[0].id:null; }
+function slotUpdate(i,key,val){
+  var T=A.T[A.tid]; T.events=T.events||[]; var s=schoolSlots(T)[i]; var j=s.join;
+  if(!j){ if(key!=='date' || !val){ (T._draft=T._draft||{})[i]=Object.assign((T._draft||{})[i]||{}, (function(o){o[key]=val;return o;})({})); return; }
+    var sys0=sysAt(T,val); j={id:uid(), seq:Date.now(), type:'join', date:val, post:'Assistant Teacher', sys:sys0?'':(val>='2016-01-01'?((A.S.levels[0]||{}).id||'2009'):(val>='2006-01-01'?'2009':'manual')), postStatus:sys0?'Permanent':'Temporary', apptStatus:sys0?'Permanent':'Temporary'};
+    var dr=(T._draft||{})[i]||{}; Object.keys(dr).forEach(function(k){ if(['relDate','relKind','relReason'].indexOf(k)<0) j[k]=dr[k]; }); if(T._draft) delete T._draft[i];
+    T.events.push(j); scheduleSave('T',A.tid); return 'rerender'; }
+  if(['relDate','relKind','relReason'].indexOf(key)>=0){
+    var r=s.rel; var rd=key==='relDate'?val:(r&&r.date)||'', rk=key==='relKind'?val:(r?(r.type==='resign'?'resign':'release'):''), rr=key==='relReason'?val:(r&&r.reason)||'';
+    if(!rd){ if(r) T.events=T.events.filter(function(e){return e.id!==r.id;}); scheduleSave('T',A.tid); return 'rerender'; }
+    if(!r){ r={id:uid(), seq:Date.now(), type:rk==='resign'?'resign':'release', date:rd}; T.events.push(r); }
+    r.type=rk==='resign'?'resign':'release'; r.date=rd; if(rr) r.reason=rr; else delete r.reason;
+    scheduleSave('T',A.tid); return key==='relDate'?'rerender':''; }
+  if(key==='pay' && !val) delete j.pay; else j[key]=val;
+  scheduleSave('T',A.tid); return key==='date'?'rerender':'';
+}
+var PAYKINDS=[['inc','ইনক্রিমেন্ট'],['benefit','১০ বছর/CAS'],['payrow','অন্য সারি'],['fix','পে-রিভিশন'],['fix2009','ROPA-2009 ফিক্সেশন'],['join','যোগদান']];
+function payTableView(T){
+  var FH=SB.fullHistory(T,A.S), H=FH.H, rowsBy={}; H.rows.forEach(function(r){ if(r.kind==='pay') rowsBy[r.ev]=r; });
+  var evs=SB.sortEvents(T.events||[]).filter(function(e){ return SB.PAYTYPES[e.type]; });
+  var h='<div class="muted sm">প্রতিটা সারিতে তারিখ আর বইয়ে লেখা বেতন দিন। বেতন খালি রাখলে অ্যাপ নিজে হিসাব করবে। হিসাবের সঙ্গে না মিললে লাল দেখাবে। যোগদান আর পে-রিভিশন বদলাতে “🏫 স্কুল” বা “চাকরির ঘটনা” ব্যবহার করুন।</div>';
+  h+='<div class="row gap wrap"><button class="btn pri" data-act="autoFill">✍ আজ পর্যন্ত সব নিজে বসাও</button><button class="btn" data-act="addPayRow">+ নতুন সারি</button></div><div class="muted sm">“আজ পর্যন্ত সব নিজে বসাও” প্রতি বছরের ১ জুলাইয়ের ইনক্রিমেন্ট আর ROPA-2019 ফিক্সেশন বসিয়ে দেয়।</div>';
+  h+='<div class="tw"><table class="dat ptab"><thead><tr><th>তারিখ</th><th>ধরন</th><th>বইয়ে বেতন</th><th>হিসাবে</th><th>ছুটির কলম (9)</th><th></th></tr></thead><tbody>';
+  evs.forEach(function(e){ var r=rowsBy[e.id]||{}, locked=(e.type==='join'||e.type==='fix'||e.type==='fix2009');
+    var exp=e._exp!=null?SB.money(e._exp):'—', bad=e._flag?' class="bad"':'';
+    h+='<tr'+bad+'><td>'+(locked?esc(SB.fmt(e.date,A.S.dateFmt)):'<input type="date" data-pe="'+e.id+'" data-pf="date" value="'+esc(e.date)+'">')+'</td>'+
+      '<td>'+(locked?esc((PAYKINDS.filter(function(k){return k[0]===e.type;})[0]||['',''])[1]):'<select data-pe="'+e.id+'" data-pf="type">'+PAYKINDS.slice(0,3).map(function(k){ return '<option value="'+k[0]+'"'+(k[0]===e.type?' selected':'')+'>'+k[1]+'</option>'; }).join('')+'</select>')+'</td>'+
+      '<td>'+(locked&&e.type==='join'?esc(r.c6||''):'<input data-pe="'+e.id+'" data-pf="pay" inputmode="numeric" placeholder="নিজে" value="'+esc(e.pay||'')+'">')+'</td>'+
+      '<td>'+exp+(e._flag?'<br><small>⚠ মিলছে না</small>':'')+'</td>'+
+      '<td>'+(locked?'':'<input data-pe="'+e.id+'" data-pf="leaveText" placeholder="'+esc(A.S.leaveTextDefault)+'" value="'+esc(e.leaveText||'')+'">')+'</td>'+
+      '<td>'+(locked?'<button class="btn sm2" data-act="editE" data-id="'+e.id+'">বদলান</button>':'<button class="btn sm2 danger" data-act="delE" data-id="'+e.id+'">✕</button>')+'</td></tr>'; });
+  h+='</tbody></table></div>';
+  if(!evs.length) h+='<div class="empty">আগে “🏫 স্কুল”-এ প্রথম স্কুল আর যোগদানের তারিখ লিখুন।</div>';
+  return h;
 }
 
 var st=document.createElement('style'); st.textContent=BOOK.CSS; document.head.appendChild(st);

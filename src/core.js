@@ -137,7 +137,9 @@ function computeHistory(T,S,LVM){
     var lt=e.leaveText!=null&&e.leaveText!==''? e.leaveText : S.leaveTextDefault;
     if(e.type==='join'){
       var prevPay=st.pay;
-      if(e.sys==='2009'){ st.sys='2009'; st.level=null; st.incPct=null; st.incRound=null; }
+      var keepSys = st.sys && (!e.sys || (st.sys==='matrix' && (e.sys==='2009'||e.sys==='manual')));
+      if(keepSys){ /* নতুন স্কুলে আগের বেতনের নিয়মই চলবে */ }
+      else if(e.sys==='2009'){ st.sys='2009'; st.level=null; st.incPct=null; st.incRound=null; }
       else if(e.sys==='manual'){ st.sys='manual'; st.level=null; }
       else if(e.sys){ st.sys='matrix'; st.level=e.sys; }
       st.post=e.postStatus||'Temporary'; st.appt=e.apptStatus||'Temporary';
