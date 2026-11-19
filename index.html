@@ -34,7 +34,7 @@ header .tl{display:flex;align-items:center;gap:8px;min-width:0}header .sch{font-
 h3{margin:22px 0 4px}h4{margin:14px 0 6px}.okbox{background:#e8f5e9;border:1px solid #b7dfbb;border-radius:10px;padding:10px 12px;font-size:13px;color:#1f5e25;margin-bottom:10px}.chk{display:flex;align-items:center;gap:8px;margin:8px 0;flex-wrap:wrap}.chk input[type=checkbox]{width:20px;height:20px}.imv{flex:1;min-width:140px;font:inherit;padding:7px 8px;border:1px solid #cfc9bc;border-radius:8px}.chk small{width:100%;padding-left:28px;color:#777}.imrow{display:grid;grid-template-columns:28px 1fr 1fr 1fr;gap:6px;align-items:center;margin:8px 0;border-bottom:1px dashed #e3ded2;padding-bottom:6px}.imrow input,.imrow select{font:inherit;font-size:14px;padding:6px;border:1px solid #cfc9bc;border-radius:6px;min-width:0}.imrow small{grid-column:1/-1;font-size:11.5px}.dabig{font-size:16px;margin-top:4px}.tw{overflow-x:auto}.dat{border-collapse:collapse;width:100%;font-size:13.5px;background:#fff}.dat th,.dat td{border:1px solid #e1ddd3;padding:7px 6px;text-align:right;white-space:nowrap}.dat th{background:#f7f5ef;text-align:center}.darow{display:grid;grid-template-columns:1fr 1fr;gap:0 10px}.darow .f:nth-child(3){grid-column:1/-1}.todobox{background:#fff8e1;border:1px solid #f0d58a;border-radius:10px;padding:10px 12px;margin-bottom:10px;font-size:14px;color:#5a4300}.todobox ul{margin:6px 0 0;padding-left:18px}.todobox li{margin:6px 0}.imsch{grid-column:2/-1;font:inherit;font-size:14px;padding:6px;border:1px solid #e0b94d;border-radius:6px;background:#fffdf3}.scard summary{cursor:pointer;padding:2px 0}.scard[open] summary{margin-bottom:6px}.g2{display:grid;grid-template-columns:1fr 1fr;gap:0 10px}@media(max-width:420px){.g2{grid-template-columns:1fr}}.ptab td{vertical-align:top}.ptab input,.ptab select{font:inherit;font-size:13.5px;padding:5px;border:1px solid #cfc9bc;border-radius:6px;width:100%;min-width:90px}.ptab tr.bad td{background:#fdecea}details{margin:12px 0}summary{cursor:pointer;color:#1f3b73}
 #pagesWrap{margin-top:10px}.pfit{overflow:hidden;margin:0 auto 12px;box-shadow:0 1px 4px rgba(0,0,0,.25)}
 #toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:#222;color:#fff;padding:10px 16px;border-radius:20px;font-size:14px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:30;max-width:90vw}#toast.on{opacity:1}
-</style></head><body><div id="app"></div><script>window.SB_STANDALONE=true;window.SB_VERSION="19-11-2026 20:17 (62e3b1)";</script><div id="dlg"></div><div id="toast"></div>
+</style></head><body><div id="app"></div><script>window.SB_STANDALONE=true;window.SB_VERSION="19-11-2026 20:37 (44b6f4)";</script><div id="dlg"></div><div id="toast"></div>
 <script>// ===== Service Book core logic (pure, no DOM) =====
 var SB = (function(){
 'use strict';
@@ -1141,19 +1141,29 @@ var INFO_LBL={name:'নাম',dob:'জন্ম তারিখ',father:'বা
 function guessComm(d){ var L=(A.S.commissions||[]).filter(function(c){return c.date && c.date<=d;}).sort(function(a,b){return b.date.localeCompare(a.date);}); return L[0]?L[0].name:''; }
 function prepPays(R,T){
   if(R._prep) return; R._prep=true;
-  R.pays.sort(function(a,b){ return a.date.localeCompare(b.date); });
-  var P=R.pays, prev=null, prevDate='';
-  P.forEach(function(p,i){
-    if(prev!=null && p.pay>prev*1.8 && p.kind!=='join'){ p.kind='fix'; p.auto='বেতন একলাফে অনেক বেড়েছে, তাই পে-রিভিশন/ফিক্সেশন ধরা হলো'; }
-    else if(prev!=null && p.kind==='inc' && p.date.slice(5)!=='07-01' && p.pay===prev && p.date!==prevDate){ var newSch=(R.schools||[]).some(function(s){ return s.date===p.date; }); if(newSch){ p.kind='join'; p.auto='এই তারিখে নতুন স্কুলের নাম আছে, তাই যোগদান ধরা হলো'; } else { p.kind='payrow'; p.auto='১ জুলাই নয় আর বেতন একই — সাধারণ বেতনের সারি ধরা হলো (নতুন স্কুল নয়)'; } }
-    else if(prev!=null && p.kind==='inc' && p.date.slice(5)!=='07-01' && p.date.slice(5)!=='01-01' && p.pay>prev){ p.kind='benefit'; p.auto='১ জুলাই নয়, তাই ১০ বছর/CAS সুবিধা ধরা হলো — ঠিক না হলে বদলে দিন'; }
-    if(p.kind==='fix' && p.date<'2016-01-01'){ p.kind='fix2009'; }
-    var nxt=null; for(var j=i+1;j<P.length;j++){ nxt=P[j].pay; break; }
-    var ref=prev!=null?prev:(nxt||0);
-    if(ref && p.pay<ref*0.7){ p.sus=true; return; }
-    prev=p.pay; prevDate=p.date; });
+  var P=R.pays;
+  // a ROPA / fixation line is a fixation even if Gemini called it something else
+  P.forEach(function(p){ if(p.kind!=='join' && /ropa|fixation|\bfixed\b|revis/i.test(p.line||'')){ p.kind=p.date<'2016-01-01'?'fix2009':'fix'; } if(p.kind==='fix' && p.date<'2016-01-01') p.kind='fix2009'; });
+  P.sort(function(a,b){ return a.date.localeCompare(b.date) || ((/fix/.test(a.kind)?1:0)-(/fix/.test(b.kind)?1:0)); });
+  // ROPA-2009 written at the joining row (w.e.f. 2006) but old-scale rows still follow: put it after them, keep the date shown in column 5
+  P.forEach(function(p){ if(p.kind!=='fix2009') return;
+    var olds=[], after=P.filter(function(q){ return q!==p && q.date>=p.date; }); for(var k=0;k<after.length;k++){ if(after[k].pay<p.pay*0.6) olds.push(after[k]); else break; } if(!olds.length) return;
+    var last=olds[olds.length-1].date, go=/G\.?\s*O\.?[^|]*?(?:dt|dated)\.?\s*(\d{1,2}\s*[.\-\/]\s*\d{1,2}\s*[.\-\/]\s*\d{2,4})/i.exec(p.line||''), gd=go?pdate(go[1]):'2009-02-27';
+    p.show=p.date; p.date=gd>last?gd:SB.addDays(last,1); p.auto='ROPA-2009-এর ফিক্সেশন — পুরনো স্কেলের সারিগুলোর পরে বসবে, কলম 5-এ দেখাবে '+SB.fmt(p.show,A.S.dateFmt); });
+  P.sort(function(a,b){ return a.date.localeCompare(b.date); });
+  var maxSeen=0, prevPlain=null, prevDate='';
+  P.forEach(function(p,i){ var isFix=/fix/.test(p.kind);
+    if(!isFix && maxSeen && p.pay>maxSeen*1.8 && p.kind!=='join'){ p.kind=p.date<'2016-01-01'?'fix2009':'fix'; isFix=true; p.auto='বেতন একলাফে অনেক বেড়েছে, তাই পে-রিভিশন/ফিক্সেশন ধরা হলো'; }
+    else if(!isFix && prevPlain!=null && p.kind==='inc' && p.date.slice(5)!=='07-01' && p.pay===prevPlain && p.date!==prevDate){ var newSch=(R.schools||[]).some(function(s){ return s.date===p.date; }); if(newSch){ p.kind='join'; p.auto='এই তারিখে নতুন স্কুলের নাম আছে, তাই যোগদান ধরা হলো'; } else { p.kind='payrow'; p.auto='১ জুলাই নয় আর বেতন একই — সাধারণ বেতনের সারি ধরা হলো (নতুন স্কুল নয়)'; } }
+    else if(!isFix && prevPlain!=null && p.kind==='inc' && p.date.slice(5)!=='07-01' && p.date.slice(5)!=='01-01' && p.pay>prevPlain){ p.kind='benefit'; p.auto='১ জুলাই নয়, তাই ১০ বছর/CAS সুবিধা ধরা হলো — ঠিক না হলে বদলে দিন'; }
+    // suspicious only if far below BOTH neighbours (a grade pay like 4800 among 16000s), not an old-scale pay before ROPA
+    if(!isFix){ var nxt=null; for(var j=i+1;j<P.length;j++){ if(!/fix/.test(P[j].kind)){ nxt=P[j].pay; break; } }
+      var lowP=prevPlain!=null && p.pay<prevPlain*0.7, lowN=nxt!=null && p.pay<nxt*0.7;
+      if((prevPlain!=null?lowP:true) && (nxt!=null?lowN:true) && (prevPlain!=null||nxt!=null)){ p.sus=true; return; }
+      prevPlain=p.pay; prevDate=p.date; }
+    maxSeen=Math.max(maxSeen,p.pay); });
   var hasJoin=(T.events||[]).some(function(e){return e.type==='join';});
-  if(!hasJoin && P.length){ var f=P.filter(function(p){return !p.sus;})[0]; if(f && f.kind!=='join'){ f.kind='join'; f.auto='প্রথম সারি, তাই যোগদান ধরা হলো'; } }
+  if(!hasJoin && P.length){ var f=P.filter(function(p){return !p.sus && !/fix/.test(p.kind);})[0]; if(f && f.kind!=='join'){ f.kind='join'; f.auto='প্রথম সারি, তাই যোগদান ধরা হলো'; } }
 }
 function snapshotImport(){ var d=$('#dlg'), R=IMP.R; d.querySelectorAll('[data-pi]').forEach(function(c){ var i=+c.getAttribute('data-pi'), p=R.pays[i]; if(!p) return; p.sus=!c.checked;
     var dd=d.querySelector('[data-pd="'+i+'"]'), pp=d.querySelector('[data-pp="'+i+'"]'), ps=d.querySelector('[data-ps="'+i+'"]'); if(dd) p.date=dd.value; if(pp) p.pay=+pp.value.replace(/[^0-9]/g,'')||p.pay; if(ps) p.school=ps.value; }); }
@@ -1191,8 +1201,8 @@ function applyTeacherImport(){
     if(ex){ ex.pay=pay; nUpd++; return; }
     var e={id:uid(), seq:Date.now()+nNew, type:k, date:date, pay:pay};
     var pr0=R.pays[+i]||{}; var sIn=d.querySelector('[data-ps="'+i+'"]'); if(sIn && sIn.value.trim()) pr0.school=sIn.value.trim();
-    if(k==='join'){ e.type='join'; e.post='Assistant Teacher'; e.school=pr0.school||'(স্কুলের নাম ও ঠিকানা লিখুন)'; e.sys=date>='2016-01-01'?((A.S.levels[0]||{}).id||'2009'):(date>='2006-01-01'?'2009':'manual'); e.postStatus='Temporary'; e.apptStatus='Temporary'; hasJoin=true; }
-    if(e.type==='fix2009'){ e.showDate=date; e.wef='2006-01-01'; e.scaleText='PB-4 (Rs. 9000-40500) + GP Rs. 4800'; e.go='G.O. No. 46-SE(B) dt. 27/02/09'; e.reason='Pay fixed as per ROPA 2009'; }
+    if(k==='join'){ e.type='join'; e.post='Assistant Teacher'; e.school=pr0.school||'(স্কুলের নাম ও ঠিকানা লিখুন)'; e.sys=date>='2016-01-01'?((A.S.levels[0]||{}).id||'2009'):(date>='2006-01-01'?'2009':'manual'); if(e.sys==='2009' && R.pays.some(function(q){ return q.kind==='fix2009' && q.date>date; })) e.sys='manual'; /* old scale until ROPA-2009 */ e.postStatus='Temporary'; e.apptStatus='Temporary'; hasJoin=true; }
+    if(e.type==='fix2009'){ e.showDate=pr0.show||date; e.wef='2006-01-01'; e.scaleText='PB-4 (Rs. 9000-40500) + GP Rs. 4800'; e.go='G.O. No. 46-SE(B) dt. 27/02/09'; e.reason='Pay fixed as per ROPA 2009'; }
     if(e.type==='fix'){ e.commission=guessComm(date)||'ROPA-2019'; var keepPay=e.pay, keepDate=e.date; applyComm(e); e.pay=keepPay; e.date=keepDate;
       if(e.method==='matrix'){ var pn=+pay, lv=A.S.levels.filter(function(L){ return L.cells.indexOf(pn)>=0; }); var lc=lv.filter(function(L){return L.commission===e.commission;}); var pick=(lc[0]||lv[0]); if(pick) e.level=pick.id; else if(!e.level) e.level=(A.S.levels[0]||{}).id; } }
     T.events.push(e); have[date]=e; nNew++; });

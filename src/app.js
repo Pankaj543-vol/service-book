@@ -401,19 +401,29 @@ var INFO_LBL={name:'নাম',dob:'জন্ম তারিখ',father:'বা
 function guessComm(d){ var L=(A.S.commissions||[]).filter(function(c){return c.date && c.date<=d;}).sort(function(a,b){return b.date.localeCompare(a.date);}); return L[0]?L[0].name:''; }
 function prepPays(R,T){
   if(R._prep) return; R._prep=true;
-  R.pays.sort(function(a,b){ return a.date.localeCompare(b.date); });
-  var P=R.pays, prev=null, prevDate='';
-  P.forEach(function(p,i){
-    if(prev!=null && p.pay>prev*1.8 && p.kind!=='join'){ p.kind='fix'; p.auto='বেতন একলাফে অনেক বেড়েছে, তাই পে-রিভিশন/ফিক্সেশন ধরা হলো'; }
-    else if(prev!=null && p.kind==='inc' && p.date.slice(5)!=='07-01' && p.pay===prev && p.date!==prevDate){ var newSch=(R.schools||[]).some(function(s){ return s.date===p.date; }); if(newSch){ p.kind='join'; p.auto='এই তারিখে নতুন স্কুলের নাম আছে, তাই যোগদান ধরা হলো'; } else { p.kind='payrow'; p.auto='১ জুলাই নয় আর বেতন একই — সাধারণ বেতনের সারি ধরা হলো (নতুন স্কুল নয়)'; } }
-    else if(prev!=null && p.kind==='inc' && p.date.slice(5)!=='07-01' && p.date.slice(5)!=='01-01' && p.pay>prev){ p.kind='benefit'; p.auto='১ জুলাই নয়, তাই ১০ বছর/CAS সুবিধা ধরা হলো — ঠিক না হলে বদলে দিন'; }
-    if(p.kind==='fix' && p.date<'2016-01-01'){ p.kind='fix2009'; }
-    var nxt=null; for(var j=i+1;j<P.length;j++){ nxt=P[j].pay; break; }
-    var ref=prev!=null?prev:(nxt||0);
-    if(ref && p.pay<ref*0.7){ p.sus=true; return; }
-    prev=p.pay; prevDate=p.date; });
+  var P=R.pays;
+  // a ROPA / fixation line is a fixation even if Gemini called it something else
+  P.forEach(function(p){ if(p.kind!=='join' && /ropa|fixation|\bfixed\b|revis/i.test(p.line||'')){ p.kind=p.date<'2016-01-01'?'fix2009':'fix'; } if(p.kind==='fix' && p.date<'2016-01-01') p.kind='fix2009'; });
+  P.sort(function(a,b){ return a.date.localeCompare(b.date) || ((/fix/.test(a.kind)?1:0)-(/fix/.test(b.kind)?1:0)); });
+  // ROPA-2009 written at the joining row (w.e.f. 2006) but old-scale rows still follow: put it after them, keep the date shown in column 5
+  P.forEach(function(p){ if(p.kind!=='fix2009') return;
+    var olds=[], after=P.filter(function(q){ return q!==p && q.date>=p.date; }); for(var k=0;k<after.length;k++){ if(after[k].pay<p.pay*0.6) olds.push(after[k]); else break; } if(!olds.length) return;
+    var last=olds[olds.length-1].date, go=/G\.?\s*O\.?[^|]*?(?:dt|dated)\.?\s*(\d{1,2}\s*[.\-\/]\s*\d{1,2}\s*[.\-\/]\s*\d{2,4})/i.exec(p.line||''), gd=go?pdate(go[1]):'2009-02-27';
+    p.show=p.date; p.date=gd>last?gd:SB.addDays(last,1); p.auto='ROPA-2009-এর ফিক্সেশন — পুরনো স্কেলের সারিগুলোর পরে বসবে, কলম 5-এ দেখাবে '+SB.fmt(p.show,A.S.dateFmt); });
+  P.sort(function(a,b){ return a.date.localeCompare(b.date); });
+  var maxSeen=0, prevPlain=null, prevDate='';
+  P.forEach(function(p,i){ var isFix=/fix/.test(p.kind);
+    if(!isFix && maxSeen && p.pay>maxSeen*1.8 && p.kind!=='join'){ p.kind=p.date<'2016-01-01'?'fix2009':'fix'; isFix=true; p.auto='বেতন একলাফে অনেক বেড়েছে, তাই পে-রিভিশন/ফিক্সেশন ধরা হলো'; }
+    else if(!isFix && prevPlain!=null && p.kind==='inc' && p.date.slice(5)!=='07-01' && p.pay===prevPlain && p.date!==prevDate){ var newSch=(R.schools||[]).some(function(s){ return s.date===p.date; }); if(newSch){ p.kind='join'; p.auto='এই তারিখে নতুন স্কুলের নাম আছে, তাই যোগদান ধরা হলো'; } else { p.kind='payrow'; p.auto='১ জুলাই নয় আর বেতন একই — সাধারণ বেতনের সারি ধরা হলো (নতুন স্কুল নয়)'; } }
+    else if(!isFix && prevPlain!=null && p.kind==='inc' && p.date.slice(5)!=='07-01' && p.date.slice(5)!=='01-01' && p.pay>prevPlain){ p.kind='benefit'; p.auto='১ জুলাই নয়, তাই ১০ বছর/CAS সুবিধা ধরা হলো — ঠিক না হলে বদলে দিন'; }
+    // suspicious only if far below BOTH neighbours (a grade pay like 4800 among 16000s), not an old-scale pay before ROPA
+    if(!isFix){ var nxt=null; for(var j=i+1;j<P.length;j++){ if(!/fix/.test(P[j].kind)){ nxt=P[j].pay; break; } }
+      var lowP=prevPlain!=null && p.pay<prevPlain*0.7, lowN=nxt!=null && p.pay<nxt*0.7;
+      if((prevPlain!=null?lowP:true) && (nxt!=null?lowN:true) && (prevPlain!=null||nxt!=null)){ p.sus=true; return; }
+      prevPlain=p.pay; prevDate=p.date; }
+    maxSeen=Math.max(maxSeen,p.pay); });
   var hasJoin=(T.events||[]).some(function(e){return e.type==='join';});
-  if(!hasJoin && P.length){ var f=P.filter(function(p){return !p.sus;})[0]; if(f && f.kind!=='join'){ f.kind='join'; f.auto='প্রথম সারি, তাই যোগদান ধরা হলো'; } }
+  if(!hasJoin && P.length){ var f=P.filter(function(p){return !p.sus && !/fix/.test(p.kind);})[0]; if(f && f.kind!=='join'){ f.kind='join'; f.auto='প্রথম সারি, তাই যোগদান ধরা হলো'; } }
 }
 function snapshotImport(){ var d=$('#dlg'), R=IMP.R; d.querySelectorAll('[data-pi]').forEach(function(c){ var i=+c.getAttribute('data-pi'), p=R.pays[i]; if(!p) return; p.sus=!c.checked;
     var dd=d.querySelector('[data-pd="'+i+'"]'), pp=d.querySelector('[data-pp="'+i+'"]'), ps=d.querySelector('[data-ps="'+i+'"]'); if(dd) p.date=dd.value; if(pp) p.pay=+pp.value.replace(/[^0-9]/g,'')||p.pay; if(ps) p.school=ps.value; }); }
@@ -451,8 +461,8 @@ function applyTeacherImport(){
     if(ex){ ex.pay=pay; nUpd++; return; }
     var e={id:uid(), seq:Date.now()+nNew, type:k, date:date, pay:pay};
     var pr0=R.pays[+i]||{}; var sIn=d.querySelector('[data-ps="'+i+'"]'); if(sIn && sIn.value.trim()) pr0.school=sIn.value.trim();
-    if(k==='join'){ e.type='join'; e.post='Assistant Teacher'; e.school=pr0.school||'(স্কুলের নাম ও ঠিকানা লিখুন)'; e.sys=date>='2016-01-01'?((A.S.levels[0]||{}).id||'2009'):(date>='2006-01-01'?'2009':'manual'); e.postStatus='Temporary'; e.apptStatus='Temporary'; hasJoin=true; }
-    if(e.type==='fix2009'){ e.showDate=date; e.wef='2006-01-01'; e.scaleText='PB-4 (Rs. 9000-40500) + GP Rs. 4800'; e.go='G.O. No. 46-SE(B) dt. 27/02/09'; e.reason='Pay fixed as per ROPA 2009'; }
+    if(k==='join'){ e.type='join'; e.post='Assistant Teacher'; e.school=pr0.school||'(স্কুলের নাম ও ঠিকানা লিখুন)'; e.sys=date>='2016-01-01'?((A.S.levels[0]||{}).id||'2009'):(date>='2006-01-01'?'2009':'manual'); if(e.sys==='2009' && R.pays.some(function(q){ return q.kind==='fix2009' && q.date>date; })) e.sys='manual'; /* old scale until ROPA-2009 */ e.postStatus='Temporary'; e.apptStatus='Temporary'; hasJoin=true; }
+    if(e.type==='fix2009'){ e.showDate=pr0.show||date; e.wef='2006-01-01'; e.scaleText='PB-4 (Rs. 9000-40500) + GP Rs. 4800'; e.go='G.O. No. 46-SE(B) dt. 27/02/09'; e.reason='Pay fixed as per ROPA 2009'; }
     if(e.type==='fix'){ e.commission=guessComm(date)||'ROPA-2019'; var keepPay=e.pay, keepDate=e.date; applyComm(e); e.pay=keepPay; e.date=keepDate;
       if(e.method==='matrix'){ var pn=+pay, lv=A.S.levels.filter(function(L){ return L.cells.indexOf(pn)>=0; }); var lc=lv.filter(function(L){return L.commission===e.commission;}); var pick=(lc[0]||lv[0]); if(pick) e.level=pick.id; else if(!e.level) e.level=(A.S.levels[0]||{}).id; } }
     T.events.push(e); have[date]=e; nNew++; });
