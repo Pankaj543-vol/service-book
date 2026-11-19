@@ -461,7 +461,7 @@ function applyTeacherImport(){
       var j=T.events.filter(function(e){ return e.type==='join' && s.date && e.date===s.date; })[0];
       if(!j && !s.date) j=SB.sortEvents(T.events).filter(function(e){ return e.type==='join'; })[0]; // no date: first school
       if(!j && s.date){ j={id:uid(), seq:Date.now()+nExtra, type:'join', date:s.date, sys:s.date>='2016-01-01'?((A.S.levels[0]||{}).id||'2009'):(s.date>='2006-01-01'?'2009':'manual'), postStatus:'Temporary', apptStatus:'Temporary'}; T.events.push(j); }
-      if(!j) return; if(s.post) j.post=s.post; if(s.school) j.school=s.school; if(s.scale) j.scale=s.scale; if(s.recog.length) j.recog=s.recog.join('\n'); nExtra++; }); }
+      if(!j) return; if(s.post) j.post=s.post; if(s.school) j.school=s.school; if(s.scale){ j.scale=s.scale; if(/\d{3,5}\s*-\s*\d{2,4}\s*-\s*\d{3,5}\s*-/.test(s.scale) && !/\bPB|grade\s*pay|\bG\.?P\b|level/i.test(s.scale)) j.sys='manual'; } if(s.recog.length) j.recog=s.recog.join('\n'); nExtra++; }); }
   if(R.notes){ d.querySelectorAll('[data-nt]').forEach(function(c){ if(!c.checked) return; var n=R.notes[+c.getAttribute('data-nt')]; if(!n.date) return;
       var nk=noteKind(n.text); if(nk==='skip') return;
       if(nk==='verify'){ var ve=verifyEvent(n.text, n.date); ve.id=uid(); ve.seq=Date.now()+nExtra; if(ve.date){ T.events.push(ve); nExtra++; } return; }
@@ -738,7 +738,7 @@ function freePay(L){ // the pay figure on a line, not a memo no., grade pay, sca
 var FR={ recog:/recogni[sz]|\brecog\b|স্বীকৃ|upgrad|salary\s*deficit|deficit\s*scheme|উন্নীত/i,
   release:/\breleas|resign|relieved|utsashree|transferred|পদত্যাগ|বদলি|অব্যাহতি/i,
   memo:/\bmemo|\bvide\b|\bno\.?\s*\S*\d\S*\s*,?\s*(?:dt|dated)|approv|sanction|appointed|appointment|permanent|confirm|verif|certif|lien|নিয়োগ|অনুমোদ|মঞ্জুর|স্থায়ী/i,
-  scale:/\bPB\s*-?\s*\d|pay\s*band|grade\s*pay|\bG\.?P\.?\b|\blevel\s*-?\s*\d|scale\s*of\s*pay|বেতনক্রম|বেতন\s*স্কেল/i,
+  scale:/\b\d{3,5}\s*-\s*\d{2,4}\s*-\s*\d{3,5}\s*-|\bPB\s*-?\s*\d|pay\s*band|grade\s*pay|\bG\.?P\.?\b|\blevel\s*-?\s*\d|scale\s*of\s*pay|বেতনক্রম|বেতন\s*স্কেল/i,
   school:/institution|vidyalaya|vidyapith|vidyapeeth|vidyamandir|vidyaniketan|siksha|high\s*school|h\.?\s*s\.?\s*school|madrasah|\bschool\b|বিদ্যালয়|বিদ্যাপীঠ|বিদ্যামন্দির|শিক্ষা\s*নিকেতন|শিক্ষানিকেতন|মাদ্রাসা/i,
   kindw:/increment|incr\b|ropa|fixation|fixed|revis|10\s*y|ten\s*year|cas\b|career\s*adv|ইনক্রিমেন্ট|বৃদ্ধি|ফিক্স/i };
 function infoKey(L){ var m=/^([^:：|]{2,40})\s*[:：|]\s*(.+)$/.exec(L); if(!m) return null; var k=m[1].toLowerCase(), v=m[2].trim();
@@ -758,7 +758,11 @@ function parseFree(lines){
     var ex=R.schools.filter(function(s){ return s._k===key || (date && s.date===date); })[0];
     if(ex){ if(date && !ex.date) ex.date=date; if(nm.length>ex.school.length) ex.school=nm.replace(/\s*,\s*/g,',\n'); cur=ex; return ex; }
     cur={date:date||'', post:post||'Assistant Teacher', school:nm.replace(/\s*,\s*/g,',\n'), scale:'', recog:[], _k:key}; R.schools.push(cur); return cur; }
+  var prev='';
   lines.forEach(function(L){
+    var was=prev; prev='';
+    if(cur && was==='school' && /^\s*(?:P\.?\s*O\.?|P\.?\s*S\.?|Dist|Vill|Pin|Block|Sub[-\s]?div|ডাক|জেলা|গ্রাম|থানা)\b/i.test(L)){ cur.school+=',\n'+L.replace(/\s*,\s*/g,',\n'); prev='school'; return; }
+    if(cur && was==='scale' && /^\s*(?:as per|vide|\(|G\.?\s*O)/i.test(L) && !READER.dates(L).some(function(x){return x.iso>='2009-01-01';})){ cur.scale+='\n'+L; prev='scale'; return; }
     var ds=READER.dates(L), d0=ds.length?ds[0].iso:'';
     var ik=infoKey(L);
     if(ik && !(ik[0]==='name' && FR.school.test(ik[1]))){ var v=ik[1];
@@ -777,8 +781,8 @@ function parseFree(lines){
       var sc=school(d0, cleanSchool(L), post);
       if(FR.scale.test(L) && !sc.scale){ var mS=/(?:PB|pay\s*band|scale)[^|]*/i.exec(L); if(mS) sc.scale=mS[0].trim(); }
       if(d0 && pay) R.pays.push({date:d0, pay:pay, kind:'join', school:sc.school, line:L});
-      if(d0) lastDate=d0; return; }
-    if(FR.scale.test(L) && !(d0 && pay && FR.kindw.test(L))){ if(!cur) cur=school('', '', ''); if(!cur.scale) cur.scale=L.replace(/^(?:scale(?:\s*of\s*pay)?|বেতনক্রম)\s*[:：\-]\s*/i,''); if(!d0||!pay) return; }
+      if(d0) lastDate=d0; prev='school'; return; }
+    if(FR.scale.test(L) && !(d0 && pay && FR.kindw.test(L))){ if(!cur) cur=school('', '', ''); if(!cur.scale){ cur.scale=L.replace(/^(?:scale(?:\s*of\s*pay)?|বেতনক্রম)\s*[:：\-]\s*/i,''); prev='scale'; } if(!d0||!pay) return; }
     if(FR.memo.test(L) && !(d0 && pay && FR.kindw.test(L))){
       var nd=d0||(cur&&cur.date)||lastDate;
       R.notes.push({date:nd, text:L.replace(/^(?:note|নোট|remarks?)\s*[:：\-]\s*/i,'')});

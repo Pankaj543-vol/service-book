@@ -34,7 +34,7 @@ header .tl{display:flex;align-items:center;gap:8px;min-width:0}header .sch{font-
 h3{margin:22px 0 4px}h4{margin:14px 0 6px}.okbox{background:#e8f5e9;border:1px solid #b7dfbb;border-radius:10px;padding:10px 12px;font-size:13px;color:#1f5e25;margin-bottom:10px}.chk{display:flex;align-items:center;gap:8px;margin:8px 0;flex-wrap:wrap}.chk input[type=checkbox]{width:20px;height:20px}.imv{flex:1;min-width:140px;font:inherit;padding:7px 8px;border:1px solid #cfc9bc;border-radius:8px}.chk small{width:100%;padding-left:28px;color:#777}.imrow{display:grid;grid-template-columns:28px 1fr 1fr 1fr;gap:6px;align-items:center;margin:8px 0;border-bottom:1px dashed #e3ded2;padding-bottom:6px}.imrow input,.imrow select{font:inherit;font-size:14px;padding:6px;border:1px solid #cfc9bc;border-radius:6px;min-width:0}.imrow small{grid-column:1/-1;font-size:11.5px}.dabig{font-size:16px;margin-top:4px}.tw{overflow-x:auto}.dat{border-collapse:collapse;width:100%;font-size:13.5px;background:#fff}.dat th,.dat td{border:1px solid #e1ddd3;padding:7px 6px;text-align:right;white-space:nowrap}.dat th{background:#f7f5ef;text-align:center}.darow{display:grid;grid-template-columns:1fr 1fr;gap:0 10px}.darow .f:nth-child(3){grid-column:1/-1}.todobox{background:#fff8e1;border:1px solid #f0d58a;border-radius:10px;padding:10px 12px;margin-bottom:10px;font-size:14px;color:#5a4300}.todobox ul{margin:6px 0 0;padding-left:18px}.todobox li{margin:6px 0}.imsch{grid-column:2/-1;font:inherit;font-size:14px;padding:6px;border:1px solid #e0b94d;border-radius:6px;background:#fffdf3}.scard summary{cursor:pointer;padding:2px 0}.scard[open] summary{margin-bottom:6px}.g2{display:grid;grid-template-columns:1fr 1fr;gap:0 10px}@media(max-width:420px){.g2{grid-template-columns:1fr}}.ptab td{vertical-align:top}.ptab input,.ptab select{font:inherit;font-size:13.5px;padding:5px;border:1px solid #cfc9bc;border-radius:6px;width:100%;min-width:90px}.ptab tr.bad td{background:#fdecea}details{margin:12px 0}summary{cursor:pointer;color:#1f3b73}
 #pagesWrap{margin-top:10px}.pfit{overflow:hidden;margin:0 auto 12px;box-shadow:0 1px 4px rgba(0,0,0,.25)}
 #toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:#222;color:#fff;padding:10px 16px;border-radius:20px;font-size:14px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:30;max-width:90vw}#toast.on{opacity:1}
-</style></head><body><div id="app"></div><script>window.SB_STANDALONE=true;window.SB_VERSION="19-11-2026 20:08 (2e2ac9)";</script><div id="dlg"></div><div id="toast"></div>
+</style></head><body><div id="app"></div><script>window.SB_STANDALONE=true;window.SB_VERSION="19-11-2026 20:12 (5a310b)";</script><div id="dlg"></div><div id="toast"></div>
 <script>// ===== Service Book core logic (pure, no DOM) =====
 var SB = (function(){
 'use strict';
@@ -1201,7 +1201,7 @@ function applyTeacherImport(){
       var j=T.events.filter(function(e){ return e.type==='join' && s.date && e.date===s.date; })[0];
       if(!j && !s.date) j=SB.sortEvents(T.events).filter(function(e){ return e.type==='join'; })[0]; // no date: first school
       if(!j && s.date){ j={id:uid(), seq:Date.now()+nExtra, type:'join', date:s.date, sys:s.date>='2016-01-01'?((A.S.levels[0]||{}).id||'2009'):(s.date>='2006-01-01'?'2009':'manual'), postStatus:'Temporary', apptStatus:'Temporary'}; T.events.push(j); }
-      if(!j) return; if(s.post) j.post=s.post; if(s.school) j.school=s.school; if(s.scale) j.scale=s.scale; if(s.recog.length) j.recog=s.recog.join('\n'); nExtra++; }); }
+      if(!j) return; if(s.post) j.post=s.post; if(s.school) j.school=s.school; if(s.scale){ j.scale=s.scale; if(/\d{3,5}\s*-\s*\d{2,4}\s*-\s*\d{3,5}\s*-/.test(s.scale) && !/\bPB|grade\s*pay|\bG\.?P\b|level/i.test(s.scale)) j.sys='manual'; } if(s.recog.length) j.recog=s.recog.join('\n'); nExtra++; }); }
   if(R.notes){ d.querySelectorAll('[data-nt]').forEach(function(c){ if(!c.checked) return; var n=R.notes[+c.getAttribute('data-nt')]; if(!n.date) return;
       var nk=noteKind(n.text); if(nk==='skip') return;
       if(nk==='verify'){ var ve=verifyEvent(n.text, n.date); ve.id=uid(); ve.seq=Date.now()+nExtra; if(ve.date){ T.events.push(ve); nExtra++; } return; }
@@ -1478,7 +1478,7 @@ function freePay(L){ // the pay figure on a line, not a memo no., grade pay, sca
 var FR={ recog:/recogni[sz]|\brecog\b|স্বীকৃ|upgrad|salary\s*deficit|deficit\s*scheme|উন্নীত/i,
   release:/\breleas|resign|relieved|utsashree|transferred|পদত্যাগ|বদলি|অব্যাহতি/i,
   memo:/\bmemo|\bvide\b|\bno\.?\s*\S*\d\S*\s*,?\s*(?:dt|dated)|approv|sanction|appointed|appointment|permanent|confirm|verif|certif|lien|নিয়োগ|অনুমোদ|মঞ্জুর|স্থায়ী/i,
-  scale:/\bPB\s*-?\s*\d|pay\s*band|grade\s*pay|\bG\.?P\.?\b|\blevel\s*-?\s*\d|scale\s*of\s*pay|বেতনক্রম|বেতন\s*স্কেল/i,
+  scale:/\b\d{3,5}\s*-\s*\d{2,4}\s*-\s*\d{3,5}\s*-|\bPB\s*-?\s*\d|pay\s*band|grade\s*pay|\bG\.?P\.?\b|\blevel\s*-?\s*\d|scale\s*of\s*pay|বেতনক্রম|বেতন\s*স্কেল/i,
   school:/institution|vidyalaya|vidyapith|vidyapeeth|vidyamandir|vidyaniketan|siksha|high\s*school|h\.?\s*s\.?\s*school|madrasah|\bschool\b|বিদ্যালয়|বিদ্যাপীঠ|বিদ্যামন্দির|শিক্ষা\s*নিকেতন|শিক্ষানিকেতন|মাদ্রাসা/i,
   kindw:/increment|incr\b|ropa|fixation|fixed|revis|10\s*y|ten\s*year|cas\b|career\s*adv|ইনক্রিমেন্ট|বৃদ্ধি|ফিক্স/i };
 function infoKey(L){ var m=/^([^:：|]{2,40})\s*[:：|]\s*(.+)$/.exec(L); if(!m) return null; var k=m[1].toLowerCase(), v=m[2].trim();
@@ -1498,7 +1498,11 @@ function parseFree(lines){
     var ex=R.schools.filter(function(s){ return s._k===key || (date && s.date===date); })[0];
     if(ex){ if(date && !ex.date) ex.date=date; if(nm.length>ex.school.length) ex.school=nm.replace(/\s*,\s*/g,',\n'); cur=ex; return ex; }
     cur={date:date||'', post:post||'Assistant Teacher', school:nm.replace(/\s*,\s*/g,',\n'), scale:'', recog:[], _k:key}; R.schools.push(cur); return cur; }
+  var prev='';
   lines.forEach(function(L){
+    var was=prev; prev='';
+    if(cur && was==='school' && /^\s*(?:P\.?\s*O\.?|P\.?\s*S\.?|Dist|Vill|Pin|Block|Sub[-\s]?div|ডাক|জেলা|গ্রাম|থানা)\b/i.test(L)){ cur.school+=',\n'+L.replace(/\s*,\s*/g,',\n'); prev='school'; return; }
+    if(cur && was==='scale' && /^\s*(?:as per|vide|\(|G\.?\s*O)/i.test(L) && !READER.dates(L).some(function(x){return x.iso>='2009-01-01';})){ cur.scale+='\n'+L; prev='scale'; return; }
     var ds=READER.dates(L), d0=ds.length?ds[0].iso:'';
     var ik=infoKey(L);
     if(ik && !(ik[0]==='name' && FR.school.test(ik[1]))){ var v=ik[1];
@@ -1517,8 +1521,8 @@ function parseFree(lines){
       var sc=school(d0, cleanSchool(L), post);
       if(FR.scale.test(L) && !sc.scale){ var mS=/(?:PB|pay\s*band|scale)[^|]*/i.exec(L); if(mS) sc.scale=mS[0].trim(); }
       if(d0 && pay) R.pays.push({date:d0, pay:pay, kind:'join', school:sc.school, line:L});
-      if(d0) lastDate=d0; return; }
-    if(FR.scale.test(L) && !(d0 && pay && FR.kindw.test(L))){ if(!cur) cur=school('', '', ''); if(!cur.scale) cur.scale=L.replace(/^(?:scale(?:\s*of\s*pay)?|বেতনক্রম)\s*[:：\-]\s*/i,''); if(!d0||!pay) return; }
+      if(d0) lastDate=d0; prev='school'; return; }
+    if(FR.scale.test(L) && !(d0 && pay && FR.kindw.test(L))){ if(!cur) cur=school('', '', ''); if(!cur.scale){ cur.scale=L.replace(/^(?:scale(?:\s*of\s*pay)?|বেতনক্রম)\s*[:：\-]\s*/i,''); prev='scale'; } if(!d0||!pay) return; }
     if(FR.memo.test(L) && !(d0 && pay && FR.kindw.test(L))){
       var nd=d0||(cur&&cur.date)||lastDate;
       R.notes.push({date:nd, text:L.replace(/^(?:note|নোট|remarks?)\s*[:：\-]\s*/i,'')});
