@@ -462,7 +462,10 @@ function applyTeacherImport(){
       if(!j && s.date){ j={id:uid(), seq:Date.now()+nExtra, type:'join', date:s.date, sys:s.date>='2016-01-01'?((A.S.levels[0]||{}).id||'2009'):(s.date>='2006-01-01'?'2009':'manual'), postStatus:'Temporary', apptStatus:'Temporary'}; T.events.push(j); }
       if(!j) return; if(s.post) j.post=s.post; if(s.school) j.school=s.school; if(s.scale) j.scale=s.scale; if(s.recog.length) j.recog=s.recog.join('\n'); nExtra++; }); }
   if(R.notes){ d.querySelectorAll('[data-nt]').forEach(function(c){ if(!c.checked) return; var n=R.notes[+c.getAttribute('data-nt')]; if(!n.date) return;
-      if(/permanent/i.test(n.text) && /post|service|retain|confirm|appoint/i.test(n.text)) T.events.push({id:uid(), seq:Date.now()+nExtra, type:'status', date:n.date, which:/post/i.test(n.text)&&!/service/i.test(n.text)?'post':'both', newStatus:'Permanent', text:n.text});
+      if(/permanent/i.test(n.text) && /post|service|retain|confirm|appoint/i.test(n.text)){ var mp=memoParts(n.text); T.events.push({id:uid(), seq:Date.now()+nExtra, type:'status', date:mp.wef||n.date, which:/post/i.test(n.text)&&!/service/i.test(n.text)?'post':'both', newStatus:'Permanent', memo:mp.no, memoDate:mp.date, by:mp.by, text:n.text}); }
+      else if(noteToJoin(n.text) && T.events.some(function(e){return e.type==='join';})){ var f=noteToJoin(n.text), js=SB.sortEvents(T.events).filter(function(e){return e.type==='join';});
+        var jj=js.filter(function(e){ return e.date<=n.date; }).pop()||js[0];
+        if(Object.keys(f).some(function(k){ return jj[k]; })){ jj.extra=(jj.extra?jj.extra+'\n':'')+n.text; } else Object.keys(f).forEach(function(k){ jj[k]=f[k]; }); }
       else T.events.push({id:uid(), seq:Date.now()+nExtra, type:'note', date:n.date, textL:n.text, fromL:'3'}); nExtra++; }); }
   if(R.releases){ d.querySelectorAll('[data-rl]').forEach(function(c){ if(!c.checked) return; var r=R.releases[+c.getAttribute('data-rl')];
       if(T.events.some(function(e){ return (e.type==='release'||e.type==='resign') && e.date===r.date; })) return;
@@ -729,7 +732,7 @@ function freePay(L){ // the pay figure on a line, not a memo no., grade pay, sca
   if(mp){ var n=+mp[1].replace(/,/g,''); if(n>=3000 && n<=400000) return n; }
   var am=READER.amounts(s).map(function(a){return a.n;}).filter(function(n){ return n>=3000 && n<=400000; });
   return am.length?Math.max.apply(null,am):0; }
-var FR={ recog:/recogni[sz]|স্বীকৃ|upgrad|salary\s*deficit|deficit\s*scheme|উন্নীত/i,
+var FR={ recog:/recogni[sz]|\brecog\b|স্বীকৃ|upgrad|salary\s*deficit|deficit\s*scheme|উন্নীত/i,
   release:/\breleas|resign|relieved|utsashree|transferred|পদত্যাগ|বদলি|অব্যাহতি/i,
   memo:/\bmemo|\bvide\b|\bno\.?\s*\S*\d\S*\s*,?\s*(?:dt|dated)|approv|sanction|appointed|appointment|permanent|confirm|verif|certif|lien|নিয়োগ|অনুমোদ|মঞ্জুর|স্থায়ী/i,
   scale:/\bPB\s*-?\s*\d|pay\s*band|grade\s*pay|\bG\.?P\.?\b|\blevel\s*-?\s*\d|scale\s*of\s*pay|বেতনক্রম|বেতন\s*স্কেল/i,
@@ -785,6 +788,23 @@ function parseFree(lines){
   R.schools.forEach(function(s){ delete s._k; });
   return R; }
 window.__parseFree=function(t){ return parseFree(freeLines(t)); };
+// a memo/approval line -> the matching boxes of the joining dialog
+function memoParts(L){ L=bnDigits(L);
+  var no=/(?:memo|resolution|res\.|order|letter|\bno)\.?\s*(?:no\.?)?\s*[:\-]?\s*([A-Za-z0-9()\/\-.&]*\d[A-Za-z0-9()\/\-.&]*)/i.exec(L);
+  var dt=/(?:\bdt|dated|date[d]?|তারিখ)\.?\s*[:\-]?\s*(\d{1,2}\s*[.\-\/]\s*\d{1,2}\s*[.\-\/]\s*\d{2,4}|\d{1,2}(?:st|nd|rd|th)?\s+[A-Za-z]+,?\s+\d{4})/i.exec(L);
+  var wef=/w\.?\s*e\.?\s*f\.?\s*[:\-]?\s*(\d{1,2}\s*[.\-\/]\s*\d{1,2}\s*[.\-\/]\s*\d{2,4}|\d{1,2}(?:st|nd|rd|th)?\s+[A-Za-z]+,?\s+\d{4})/i.exec(L);
+  var by=/\bby\s+(?:the\s+)?(.+?)(?=\s+(?:vide|memo|under|w\.?e\.?f|on|dt|dated|no\.?)\b|[;]|$)/i.exec(L);
+  var ds=READER.dates(L);
+  return {no:no?no[1].replace(/[.,]+$/,''):'', date:dt?pdate(dt[1]):(ds.length?ds[ds.length-1].iso:''), wef:wef?pdate(wef[1]):'', by:by?by[1].replace(/[\s,.]+$/,''):''}; }
+function noteToJoin(L){ var m=memoParts(L), f={};
+  if(/resolution|managing\s*committee|\bM\.\s*C\.|\bMC\b/i.test(L) && !/recommend|approv/i.test(L)){ f.mcRes=m.no; f.mcDate=m.date; }
+  else if(/recommend|WBRSSC|\bS\.?S\.?C\b|সুপারিশ|school service commission/i.test(L)){ f.through=/WBRSSC|S\.?S\.?C|commission/i.test(L)?'WBRSSC':(m.by||''); f.apptMemo=m.no; f.apptDate=m.date; }
+  else if(/approv|অনুমোদ/i.test(L)){ f.approvedBy=m.by; f.approvalMemo=m.no; f.approvalDate=m.date; f.approvalWef=m.wef; }
+  else if(/sanction|মঞ্জুর/i.test(L)){ f.sanction=L.replace(/^(?:note|নোট)\s*[:\-]\s*/i,''); }
+  else if(/appoint|নিয়োগ/i.test(L) && !/permanent/i.test(L)){ f.through=m.by; f.apptMemo=m.no; f.apptDate=m.date; }
+  else return null;
+  Object.keys(f).forEach(function(k){ if(!f[k]) delete f[k]; });
+  return Object.keys(f).length?f:null; }
 function parsePasted(txt){
   var R={info:{}, pays:[], refs:[], scanned:[], conf:null, ai:true, pasted:true, leave:[], text:txt};
   var t=String(txt||'').replace(/\r/g,'');
@@ -803,7 +823,7 @@ function parsePasted(txt){
       if(k==='RESIDENCE'){ R.info.residence=v; return; }
       if(k==='SCHOOL'){ var s=v.split('|').map(function(x){return x.trim();}); var sd=pdate(s[0]); R.schools=R.schools||[]; R.schools.push({date:sd, post:s[1]||'', school:(s[2]||'').replace(/\s*,\s*/g,',\n').replace(/,\n(?=[^\n]*$)/,',\n'), scale:s[3]||'', recog:[]}); return; }
       if(k==='RECOG'){ R.schools=R.schools||[]; if(!R.schools.length) R.schools.push({date:'',post:'',school:'',scale:'',recog:[]}); R.schools[R.schools.length-1].recog.push(v); return; }
-      if(k==='NOTE'){ var nn=v.split('|'); var nd=pdate(nn[0]); var nt=(nd?nn.slice(1):nn).join('|').trim(); if(nt){ R.notes=R.notes||[]; R.notes.push({date:nd, text:nt}); } return; }
+      if(k==='NOTE'){ var nn=v.split('|'); var nd=pdate(nn[0]); var nt=(nd?nn.slice(1):nn).join('|').trim(); if(nt && FR.recog.test(nt) && !FR.kindw.test(nt)){ R.schools=R.schools||[]; if(!R.schools.length) R.schools.push({date:'',post:'',school:'',scale:'',recog:[]}); R.schools[R.schools.length-1].recog.push(v.replace(/\s*\|\s*/g,' ')); return; } if(nt){ R.notes=R.notes||[]; R.notes.push({date:nd, text:nt}); } return; }
       if(k==='RELEASE'){ var rr=v.split('|').map(function(x){return x.trim();}); var rd=pdate(rr[0]); if(rd){ R.releases=R.releases||[]; R.releases.push({date:rd, reason:rr.slice(1).join(' | ')||'Released'}); } return; }
       if(k==='NAME') R.info.name=v; else if(k==='FATHER') R.info.father=v; else if(k==='HEIGHT') R.info.height=v; else if(k==='MARK') R.info.idMarks=v; else if(k==='QUAL') R.info.qualEntry=v;
       else if(k==='DOB'){ var d=pdate(v); if(d) R.info.dob=d; }
