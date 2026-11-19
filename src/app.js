@@ -405,7 +405,7 @@ function prepPays(R,T){
   var P=R.pays, prev=null, prevDate='';
   P.forEach(function(p,i){
     if(prev!=null && p.pay>prev*1.8 && p.kind!=='join'){ p.kind='fix'; p.auto='বেতন একলাফে অনেক বেড়েছে, তাই পে-রিভিশন/ফিক্সেশন ধরা হলো'; }
-    else if(prev!=null && p.kind==='inc' && p.date.slice(5)!=='07-01' && p.pay===prev && p.date!==prevDate){ p.kind='join'; p.auto='১ জুলাই নয় আর বেতন একই, তাই নতুন স্কুলে যোগদান ধরা হলো — ঠিক না হলে বদলে দিন'; }
+    else if(prev!=null && p.kind==='inc' && p.date.slice(5)!=='07-01' && p.pay===prev && p.date!==prevDate){ var newSch=(R.schools||[]).some(function(s){ return s.date===p.date; }); if(newSch){ p.kind='join'; p.auto='এই তারিখে নতুন স্কুলের নাম আছে, তাই যোগদান ধরা হলো'; } else { p.kind='payrow'; p.auto='১ জুলাই নয় আর বেতন একই — সাধারণ বেতনের সারি ধরা হলো (নতুন স্কুল নয়)'; } }
     else if(prev!=null && p.kind==='inc' && p.date.slice(5)!=='07-01' && p.date.slice(5)!=='01-01' && p.pay>prev){ p.kind='benefit'; p.auto='১ জুলাই নয়, তাই ১০ বছর/CAS সুবিধা ধরা হলো — ঠিক না হলে বদলে দিন'; }
     if(p.kind==='fix' && p.date<'2016-01-01'){ p.kind='fix2009'; }
     var nxt=null; for(var j=i+1;j<P.length;j++){ nxt=P[j].pay; break; }
@@ -776,7 +776,7 @@ function parseFree(lines){
     if(FR.release.test(L) && d0 && !FR.kindw.test(L)){ R.releases.push({date:d0, reason:L.replace(/\b\d{1,2}\s*[.\-\/]\s*\d{1,2}\s*[.\-\/]\s*\d{2,4}\b/g,' ').replace(/\s{2,}/g,' ').replace(/^[\s|:,\-–]+/,'').replace(/[\s,|]*(?:w\.?\s*e\.?\s*f\.?|on|from|dated|dt\.?)?[\s,.|]*$/i,'').trim()||'Released'}); return; }
     var pay=freePay(L);
     if(/liability|loan and advance|non-recovery/i.test(L)) return; // part of the certificate the app writes itself
-    var isSchool=FR.school.test(L) && !/^\s*(?:he|she|his|her|the school|school came)\b/i.test(L) && !/\bschools\b|district inspector|D\.?\s*I\.?\s*of/i.test(L) && !FR.memo.test(L.replace(/appointed|appointment/ig,''));
+    var isSchool=FR.school.test(L) && !isSignLine(L) && !/^\s*(?:he|she|his|her|the school|school came)\b/i.test(L) && !/\bschools\b|district inspector|D\.?\s*I\.?\s*of/i.test(L) && !FR.memo.test(L.replace(/appointed|appointment/ig,''));
     if(isSchool){ var post=(/head\s*master|headmistress|প্রধান শিক্ষক/i.exec(L)||[])[0]?'Headmaster':(/assistant|asstt|সহকারী/i.test(L)?'Assistant Teacher':'');
       var sc=school(d0, cleanSchool(L), post);
       if(FR.scale.test(L) && !sc.scale){ var mS=/(?:PB|pay\s*band|scale)[^|]*/i.exec(L); if(mS) sc.scale=mS[0].trim(); }
@@ -833,6 +833,7 @@ function verifyEvent(t, fallbackDate){ var L=bnDigits(t), m=/from\s+(\d{1,2}\s*[
   var e={type:'verify', style:cert?'cert':'stamp', from:from, to:to, date:(cert?to:(to||sd))||sd||fallbackDate};
   if(cert){ if(di) e.di=di[1].replace(/counter\s*signed\s*:?/i,'').trim(); } else e.text=stripSign(t);
   return e; }
+function isSignLine(t){ return /স্বাক্ষর|signature|\bsigned\b|\bseal\b|counter\s*sign|\(?পাতা\s*\d/i.test(String(t||'')); }
 function parsePasted(txt){
   var R={info:{}, pays:[], refs:[], scanned:[], conf:null, ai:true, pasted:true, leave:[], text:txt};
   var t=String(txt||'').replace(/\r/g,'');
@@ -849,7 +850,7 @@ function parsePasted(txt){
     t.split('\n').forEach(function(line){ var L=line.replace(/^[\s*\-•>#`]+/,'').replace(/\*\*/g,'').trim(); if(!L) return;
       var m=/^(NAME|DOB|FATHER|RESIDENCE|HEIGHT|MARK|QUAL|ROW|LEAVE|REF|SCHOOL|RECOG|NOTE|RELEASE)\s*[:：\-]\s*(.*)$/i.exec(L); if(!m || (/^(ROW|LEAVE|SCHOOL|RELEASE)$/i.test(m[1]) && m[2].indexOf('|')<0)){ rest.push(line); return; } var k=m[1].toUpperCase(), v=m[2].trim(); if(!v) return;
       if(k==='RESIDENCE'){ R.info.residence=v; return; }
-      if(k==='SCHOOL'){ var s=v.split('|').map(function(x){return x.trim();}); var sd=pdate(s[0]); R.schools=R.schools||[]; R.schools.push({date:sd, post:s[1]||'', school:(s[2]||'').replace(/\s*,\s*/g,',\n').replace(/,\n(?=[^\n]*$)/,',\n'), scale:s[3]||'', recog:[]}); return; }
+      if(k==='SCHOOL'){ if(isSignLine(v)) return; var s=v.split('|').map(function(x){return x.trim();}); var sd=pdate(s[0]); R.schools=R.schools||[]; var sk=function(x){ return String(x||'').toLowerCase().replace(/[^a-z]/g,'').slice(0,14); }; var dup=R.schools.filter(function(o){ return sk(o.school) && sk(o.school)===sk(s[2]); })[0]; if(dup){ if(!dup.scale && s[3]) dup.scale=s[3]; return; } R.schools.push({date:sd, post:s[1]||'', school:(s[2]||'').replace(/\s*,\s*/g,',\n').replace(/,\n(?=[^\n]*$)/,',\n'), scale:s[3]||'', recog:[]}); return; }
       if(k==='RECOG'){ R.schools=R.schools||[]; if(!R.schools.length) R.schools.push({date:'',post:'',school:'',scale:'',recog:[]}); R.schools[R.schools.length-1].recog.push(v); return; }
       if(k==='NOTE'){ var nn=v.split('|'); var nd=pdate(nn[0]); var nt=(nd?nn.slice(1):nn).join('|').trim(); if(nt && FR.recog.test(nt) && !FR.kindw.test(nt)){ R.schools=R.schools||[]; if(!R.schools.length) R.schools.push({date:'',post:'',school:'',scale:'',recog:[]}); R.schools[R.schools.length-1].recog.push(v.replace(/\s*\|\s*/g,' ')); return; } if(nt){ R.notes=R.notes||[]; R.notes.push({date:nd, text:nt}); } return; }
       if(k==='RELEASE'){ var rr=v.split('|').map(function(x){return x.trim();}); var rd=pdate(rr[0]); if(rd){ R.releases=R.releases||[]; R.releases.push({date:rd, reason:rr.slice(1).join(' | ')||'Released'}); } return; }
