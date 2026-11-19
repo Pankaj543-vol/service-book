@@ -8,7 +8,7 @@ h=open('index.html').read()
 h=re.sub(r'<link rel="preconnect"[^>]*>','',h)
 h=re.sub(r'<link rel="stylesheet" href="https://fonts.googleapis.com[^>]*>','<link rel="stylesheet" href="fonts/fonts.css"><link rel="manifest" href="manifest.webmanifest"><link rel="icon" href="icon-192.png"><link rel="apple-touch-icon" href="icon-192.png"><meta name="theme-color" content="#1f3b73">',h,count=1)
 h=h.replace('<title>সার্ভিস বুক</title>','<title>শিক্ষকদের সার্ভিস বুক তৈরি করার অ্যাপ</title>')
-h=h.replace('<div id="app"></div>','<div id="app"></div><script>window.SB_STANDALONE=true;</script>',1)
+h=h.replace('<div id="app"></div>','<div id="app"></div><script>window.SB_STANDALONE=true;window.SB_VERSION="@@VER@@";</script>',1)
 open('pwa/index.html','w').write(h)
 json.dump({"name":"শিক্ষকদের সার্ভিস বুক তৈরি করার অ্যাপ","short_name":"সার্ভিস বুক","start_url":"./","scope":"./","display":"standalone","background_color":"#f3f1ec","theme_color":"#1f3b73","lang":"bn",
  "icons":[{"src":"icon-192.png","sizes":"192x192","type":"image/png"},{"src":"icon-512.png","sizes":"512x512","type":"image/png"},{"src":"icon-maskable-512.png","sizes":"512x512","type":"image/png","purpose":"maskable"}]},open('pwa/manifest.webmanifest','w'),ensure_ascii=False,indent=1)
@@ -32,19 +32,22 @@ for root,_,fs in os.walk('pwa'):
   for f in fs:
     p=os.path.relpath(os.path.join(root,f),'pwa')
     if p!='sw.js': files.append(p)
+import datetime
 dig=hashlib.sha1(b''.join(open(os.path.join('pwa',p),'rb').read() for p in sorted(files))).hexdigest()[:10]
 files=['./']+sorted(files)
+stamp=(datetime.datetime.now(datetime.timezone.utc)+datetime.timedelta(hours=5,minutes=30)).strftime('%d-%m-%Y %H:%M')+' ('+dig[:6]+')'
+ix=open('pwa/index.html').read().replace('@@VER@@',stamp); open('pwa/index.html','w').write(ix)
 sw="""// সার্ভিস বুক — অফলাইন ও আপডেট
 var VERSION='sb-%s';
 var FILES=%s;
-self.addEventListener('install',function(e){ e.waitUntil(caches.open(VERSION).then(function(c){ return c.addAll(FILES); }).then(function(){ return self.skipWaiting(); })); });
+self.addEventListener('install',function(e){ e.waitUntil(caches.open(VERSION).then(function(c){ return c.addAll(FILES.map(function(u){ return new Request(u,{cache:'reload'}); })); }).then(function(){ return self.skipWaiting(); })); });
 self.addEventListener('activate',function(e){ e.waitUntil(caches.keys().then(function(ks){ return Promise.all(ks.filter(function(k){return k!==VERSION;}).map(function(k){return caches.delete(k);})); }).then(function(){ return self.clients.claim(); })); });
 self.addEventListener('fetch',function(e){
   var req=e.request; if(req.method!=='GET') return;
   var url=new URL(req.url); if(url.origin!==location.origin) return;
   var isPage=req.mode==='navigate' || /\\/(index\\.html)?$/.test(url.pathname);
   if(isPage){
-    e.respondWith(fetch(req).then(function(r){ var cp=r.clone(); caches.open(VERSION).then(function(c){ c.put('./',cp); }); return r; }).catch(function(){ return caches.match('./').then(function(r){ return r||caches.match('index.html'); }); }));
+    e.respondWith(fetch(req,{cache:'no-store'}).then(function(r){ var cp=r.clone(); caches.open(VERSION).then(function(c){ c.put('./',cp); }); return r; }).catch(function(){ return caches.match('./').then(function(r){ return r||caches.match('index.html'); }); }));
     return; }
   e.respondWith(caches.match(req,{ignoreSearch:true}).then(function(r){ return r||fetch(req); }));
 });

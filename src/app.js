@@ -71,10 +71,12 @@ function homeView(){
   var ids=Object.keys(A.T).sort(function(a,b){ return (A.T[a].name||'').localeCompare(A.T[b].name||''); });
   var h='<div class="pad"><div class="row gap"><button class="btn pri" data-act="newT">+ নতুন শিক্ষক</button><button class="btn" data-act="settings">⚙ সেটিংস ও পে-ম্যাট্রিক্স</button></div>'+
     '<div class="row gap wrap" style="margin-top:8px"><button class="btn sm2" data-act="backup">⬇ ব্যাকআপ ফাইল নামাও</button><button class="btn sm2" data-act="restore">⬆ ব্যাকআপ থেকে ফেরত আনো</button></div>'+
-    (STANDALONE?'<div class="muted sm">সব তথ্য শুধু এই '+(/Android|iPhone|iPad/i.test(navigator.userAgent)?'ফোনে':'যন্ত্রে')+' সেভ থাকে, কোথাও পাঠানো হয় না। ফোন হারালে বা বদলালে তথ্য যাতে না হারায়, মাঝে মাঝে ব্যাকআপ ফাইল নামিয়ে রাখুন।'+(A.lastBackup?' শেষ ব্যাকআপ: '+esc(A.lastBackup):'')+'</div>':'');
+    (STANDALONE?'<div class="muted sm">অ্যাপের সংস্করণ: '+esc(window.SB_VERSION||'')+'</div><div class="muted sm">সব তথ্য শুধু এই '+(/Android|iPhone|iPad/i.test(navigator.userAgent)?'ফোনে':'যন্ত্রে')+' সেভ থাকে, কোথাও পাঠানো হয় না। ফোন হারালে বা বদলালে তথ্য যাতে না হারায়, মাঝে মাঝে ব্যাকআপ ফাইল নামিয়ে রাখুন।'+(A.lastBackup?' শেষ ব্যাকআপ: '+esc(A.lastBackup):'')+'</div>':'');
+  var empties=ids.filter(function(id){ var T=A.T[id]; return !T.name && !(T.events||[]).length; });
+  if(empties.length>1) h+='<div class="row gap"><button class="btn sm2 danger" data-act="delEmpty">🗑 নাম ছাড়া খালি '+empties.length+'টি খাতা একসঙ্গে মুছুন</button></div>';
   if(!ids.length) h+='<div class="empty">এখনও কোনো শিক্ষক যোগ করা হয়নি। “+ নতুন শিক্ষক” টিপে শুরু করুন।</div>';
   ids.forEach(function(id){ var T=A.T[id]; var H=SB.computeHistory(T,A.S); var last=H.postings[H.postings.length-1];
-    h+='<div class="card tcard" data-act="openT" data-id="'+id+'"><div class="tn">'+esc(T.name||'(নাম নেই)')+'</div><div class="muted sm">'+esc(last?last.school.split('\n')[0]:'কোনো স্কুল যোগ হয়নি')+'</div>'+
+    h+='<div class="card tcard" data-act="openT" data-id="'+id+'"><button class="btn sm2 danger tdel" data-act="delTid" data-id="'+id+'">🗑 মুছুন</button><div class="tn">'+esc(T.name||'(নাম নেই)')+'</div><div class="muted sm">'+esc(last?last.school.split('\n')[0]:'কোনো স্কুল যোগ হয়নি')+'</div>'+
       '<div class="sm">বর্তমান বেতন: <b>'+(H.finalPay!=null?SB.money(H.finalPay):'—')+'</b>'+(H.flags.length?' <span class="flag">⚠ '+H.flags.length+'টি অমিল</span>':'')+'</div></div>'; });
   return h+'</div>';
 }
@@ -307,6 +309,8 @@ document.addEventListener('click',function(ev){
   if(act==='home'){ A.view='home'; render(); }
   else if(act==='settings'){ A.view='settings'; render(); }
   else if(act==='newT'){ var nid=uid(); A.T[nid]={id:nid, name:'', sex:'M', desigShort:'A.T.', dobSource:'West Bengal Board of Secondary Education', events:[], leave:{ov:{},notes:{}}}; pendingNew[nid]=1; A.tid=nid; A.view='teacher'; A.tab='info'; render(); scheduleSave('T',nid); }
+  else if(act==='delTid'){ ev.stopPropagation(); var T0=A.T[id]; ask('“'+(T0&&T0.name||'নাম নেই')+'” — এই শিক্ষকের সব তথ্য মুছে যাবে, ফেরত আনা যাবে না। মুছবেন?',function(){ delete A.T[id]; delete pendingNew[id]; render(); if(A.mode==='db') doSave('del',id); else lsPut(); toast('মুছে ফেলা হলো'); }); return; }
+  else if(act==='delEmpty'){ var em=Object.keys(A.T).filter(function(k){ var t=A.T[k]; return !t.name && !(t.events||[]).length; }); ask('নাম ছাড়া, কোনো ঘটনা ছাড়া '+em.length+'টি খালি খাতা মুছে যাবে। মুছবেন?',function(){ em.forEach(function(k){ delete A.T[k]; delete pendingNew[k]; if(A.mode==='db') doSave('del',k); }); if(A.mode!=='db') lsPut(); render(); toast(em.length+'টি খালি খাতা মোছা হলো'); }); return; }
   else if(act==='openT'){ A.tid=id; A.view='teacher'; A.tab='events'; render(); }
   else if(act==='tab'){ A.tab=b.getAttribute('data-tab'); render(); }
   else if(act==='delT'){ ask('এই শিক্ষকের সব তথ্য মুছে যাবে, ফেরত আনা যাবে না। মুছবেন?',function(){ var t=A.tid; delete A.T[t]; A.view='home'; render(); if(A.mode==='db') doSave('del',t); else lsPut(); }); }
@@ -565,7 +569,9 @@ if(STANDALONE){
   try{ if(navigator.storage && navigator.storage.persist) navigator.storage.persist(); }catch(e){}
   if('serviceWorker' in navigator){
     var hadCtl=!!navigator.serviceWorker.controller;
-    navigator.serviceWorker.register('sw.js').then(function(reg){
+    navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(function(reg){
+      reg.update().catch(function(){});
+      document.addEventListener('visibilitychange',function(){ if(document.visibilityState==='visible') reg.update().catch(function(){}); });
       setInterval(function(){ reg.update().catch(function(){}); }, 60*60*1000);
     }).catch(function(){});
     navigator.serviceWorker.addEventListener('controllerchange',function(){
