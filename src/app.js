@@ -424,7 +424,8 @@ function prepPays(R,T){
   // ROPA-2019: book keeps the old-pay rows of 2016–2019, then writes the fixation and the notional rows from 2016 again
   P.forEach(function(f){ if(f.kind!=='fix' || f.date<'2016-01-01') return;
     var am=/actual(?:ly)?\s*(?:paid|benefit)[^0-9]{0,20}(\d{1,2}\s*[.\-\/]\s*\d{1,2}\s*[.\-\/]\s*\d{2,4})/i.exec(f.line||''); var actual=am?pdate(am[1]):'';
-    if(!actual){ var pr=P.filter(function(q){ return q.kind==='payrow' && q.date>f.date; })[0]; actual=pr?pr.date:''; }
+    if(!actual){ var pr=P.filter(function(q){ return q.kind==='payrow' && q.date>f.date; })[0]; actual=pr?pr.date:(f.date==='2016-01-01'?'2020-01-01':''); }
+    P.forEach(function(q){ if(q!==f && q.date===actual && q.pay>=f.pay*0.6 && q.kind==='inc'){ q.kind='payrow'; q.reason='Actual benefit (ROPA-2019)'; } });
     if(!actual) return; f.actual=actual;
     var pre=P.filter(function(q){ return q!==f && q.date>=f.date && q.date<actual && q.pay<f.pay*0.6; });
     if(!pre.length) return;
@@ -442,6 +443,10 @@ function prepPays(R,T){
       if((prevPlain!=null?lowP:true) && (nxt!=null?lowN:true) && (prevPlain!=null||nxt!=null)){ p.sus=true; return; }
       prevPlain=p.pay; prevDate=p.date; }
     maxSeen=Math.max(maxSeen,p.pay); });
+  (R.schools||[]).forEach(function(sc){ var m=/(\d{3,5})((?:\s*-\s*\d{2,4}\s*-\s*\d{3,5})+)/.exec(sc.scale||''); if(!m) return;
+    var parts=(m[1]+m[2]).split(/\s*-\s*/).map(Number), st=[parts[0]]; for(var a=1;a+1<parts.length;a+=2){ var inc=parts[a], to=parts[a+1], v=st[st.length-1]; while(v+inc<=to){ v+=inc; st.push(v); } }
+    P.forEach(function(q){ if(/fix/.test(q.kind) || q.pay>st[st.length-1]*1.3 || st.indexOf(q.pay)>=0) return; var near=st.reduce(function(b,x){ return Math.abs(x-q.pay)<Math.abs(b-q.pay)?x:b; },st[0]);
+      if(Math.abs(near-q.pay)<=q.pay*0.15){ q.auto='⚠ লেখায় '+q.pay+' — স্কেলের ('+m[0]+') কোনো ধাপ নয়, কাছের ধাপ '+near+' বসানো হলো। বই দেখে ঠিক করুন'; q.pay=near; } }); });
   var hasJoin=(T.events||[]).some(function(e){return e.type==='join';});
   if(!hasJoin && P.length){ var f0=P.filter(function(p){return !p.sus && !/fix/.test(p.kind);})[0]; if(f0 && f0.kind!=='join'){ f0.kind='join'; f0.auto='প্রথম সারি, তাই যোগদান ধরা হলো'; } }
 }
@@ -494,11 +499,12 @@ function applyTeacherImport(){
       if(!j) return; if(s.post) j.post=s.post; if(s.school) j.school=s.school; if(s.scale){ j.scale=s.scale; if(/\d{3,5}\s*-\s*\d{2,4}\s*-\s*\d{3,5}\s*-/.test(s.scale) && !/\bPB|grade\s*pay|\bG\.?P\b|level/i.test(s.scale)) j.sys='manual'; } if(s.recog.length) j.recog=s.recog.join('\n'); nExtra++; }); }
   if(R.notes){ d.querySelectorAll('[data-nt]').forEach(function(c){ if(!c.checked) return; var n=R.notes[+c.getAttribute('data-nt')]; if(!n.date) return;
       var nk=noteKind(n.text); if(nk==='skip') return;
-      if(nk==='verify'){ var ve=verifyEvent(n.text, n.date); ve.id=uid(); ve.seq=Date.now()+nExtra; if(ve.date){ T.events.push(ve); nExtra++; } return; }
-      if(nk==='status'){ var mp=memoParts(n.text); T.events.push({id:uid(), seq:Date.now()+nExtra, type:'status', date:mp.wef||n.date, which:/retain/i.test(n.text)?'appt':(/post/i.test(n.text)&&!/service/i.test(n.text)?'post':'both'), newStatus:'Permanent', memo:mp.no, memoDate:mp.date, by:mp.by, text:n.text}); }
+      if(nk==='verify'){ var ve=verifyEvent(n.text, n.date); ve.id=uid(); ve.seq=Date.now()+nExtra; var dupv=T.events.filter(function(e){ return e.type==='verify' && e.from===ve.from && e.to===ve.to && ve.from; })[0]; if(dupv){ if(ve.di && !dupv.di) dupv.di=ve.di; return; } if(ve.date){ T.events.push(ve); nExtra++; } return; }
+      if(nk==='status'){ var mp=memoParts(n.text), fr=/(?:from|w\.?\s*e\.?\s*f\.?)\s*(\d{1,2}\s*[.\-\/]\s*\d{1,2}\s*[.\-\/]\s*\d{2,4}|\d{1,2}(?:st|nd|rd|th)?\s+[A-Za-z]+,?\s+\d{4})/i.exec(bnDigits(n.text)); T.events.push({id:uid(), seq:Date.now()+nExtra, type:'status', date:(fr&&pdate(fr[1]))||mp.wef||n.date, which:/retain/i.test(n.text)?'appt':(/post/i.test(n.text)&&!/service/i.test(n.text)?'post':'both'), newStatus:'Permanent', memo:mp.no, memoDate:mp.date, by:mp.by, text:n.text}); }
       else if(noteToJoin(n.text) && T.events.some(function(e){return e.type==='join';})){ var f=noteToJoin(n.text), js=SB.sortEvents(T.events).filter(function(e){return e.type==='join';});
         var jj=(n.sd && js.filter(function(e){ return e.date===n.sd; })[0]) || js.filter(function(e){ return e.date<=n.date; }).pop() || js[0];
         var ks=Object.keys(f).filter(function(k){ return !jj[k]; }); ks.forEach(function(k){ jj[k]=f[k]; }); if(ks.length<Object.keys(f).length && !ks.length) jj.extra=(jj.extra?jj.extra+'\n':'')+n.text; }
+      else if(n.cell && n.sd && T.events.some(function(e){ return e.type==='join' && e.date===n.sd; })){ var jx=T.events.filter(function(e){ return e.type==='join' && e.date===n.sd; })[0]; if(!jx.school || jx.school.indexOf(n.text.slice(0,20))<0) jx.extra=(jx.extra?jx.extra+'\n':'')+n.text; }
       else T.events.push({id:uid(), seq:Date.now()+nExtra, type:'note', date:n.date, textL:n.text, fromL:'3'}); nExtra++; }); }
   if(R.releases){ d.querySelectorAll('[data-rl]').forEach(function(c){ if(!c.checked) return; var r=R.releases[+c.getAttribute('data-rl')];
       if(T.events.some(function(e){ return (e.type==='release'||e.type==='resign') && e.date===r.date; })) return;
@@ -756,8 +762,8 @@ function kindWord(s){ s=String(s||'').toLowerCase();
 function bnDigits(s){ return String(s||'').replace(/[০-৯]/g,function(c){ return String('০১২৩৪৫৬৭৮৯'.indexOf(c)); }); }
 function freeLines(t){ var out=[];
   var SPLIT=/\.\s+(?=(?:Recommended|Joined|Approved|Service in|Appointed|Resigned|Released|Transferred|Pay is|Next date)\b)/;
-  bnDigits(t).replace(/\r/g,'').replace(/`?\[অস্পষ্ট\]`?/g,'').replace(/`/g,'').split('\n').forEach(function(raw){ var L=raw.trim(); if(!L) return;
-    if(/^#+\s*/.test(L)){ out.push('§H '+L.replace(/^#+\s*/,'').replace(/\*\*/g,'')); return; } // a heading
+  bnDigits(t).replace(/\r/g,'').replace(/`?\[(?:অস্পষ্ট|illegible|unclear|unreadable)\]`?/gi,'').replace(/`/g,'').split('\n').forEach(function(raw){ var L=raw.trim(); if(!L) return;
+    if(/^#+\s*/.test(L) || /^\**\s*(?:Page|পাতা)\s*\d+\s*\(.*\)\s*\**:?$/i.test(L)){ out.push('§H '+L.replace(/^#+\s*/,'').replace(/\*\*/g,'')); return; } // a heading
     if(/^\|?\s*:?-{2,}/.test(L)) return; // table divider
     if(/^\|/.test(L)){ var cells=L.replace(/^\||\|$/g,'').split('|').map(function(c){return c.replace(/\*\*/g,'').trim();}).filter(Boolean);
       if(!cells.length) return;
@@ -798,18 +804,22 @@ function parseFree(lines){
     var ex=R.schools.filter(function(s){ return s._k===key || (date && s.date===date); })[0];
     if(ex){ if(date && !ex.date) ex.date=date; if(nm.length>ex.school.length) ex.school=nm.replace(/\s*,\s*/g,',\n'); cur=ex; return ex; }
     cur={date:date||'', post:post||'Assistant Teacher', school:nm.replace(/\s*,\s*/g,',\n'), scale:'', recog:[], _k:key}; R.schools.push(cur); return cur; }
-  function addNote(d,text){ R.notes.push({date:d||(cur&&cur.date)||lastDate, text:text, sch:cur}); }
+  function addNote(d,text,opt){ R.notes.push({date:(opt&&opt.date)||d||(cur&&cur.date)||lastDate, text:text, sch:cur, cell:!!(opt&&opt.noPay)}); }
   function rangeEnd(L){ var m=/^(\d{1,2}\s*[.\-\/]\s*\d{1,2}\s*[.\-\/]\s*\d{2,4})\s*[–—\-]\s*(\d{1,2}\s*[.\-\/]\s*\d{1,2}\s*[.\-\/]\s*\d{2,4})/.exec(L); return m?pdate(m[2]):''; }
-  function addRelease(r){ if(!R.releases.some(function(x){ return x.date===r.date; })) R.releases.push(r); }
+  function addRelease(r){ var ex=R.releases.filter(function(x){ return x.date===r.date; })[0]; if(!ex) R.releases.push(r); else if(ex.reason==='Released' && r.reason!=='Released') ex.reason=r.reason; }
   var prev='';
-  lines.forEach(function(L){
-    if(/^§H /.test(L)){ mode=/leave\s*account/i.test(L)?'leave':''; prev=''; return; } // headings only switch the section
-    if(mode==='leave') return; // the app writes the leave account itself
+  function one(L,opt){ opt=opt||{};
+    if(/^§H /.test(L)){ mode=/leave\s*account/i.test(L)?'leave':(/zoom|stamp|signature/i.test(L)?'skip':''); prev=''; return; } // headings only switch the section
+    if(mode==='leave'||mode==='skip') return; // the app writes the leave account itself; zoomed stamps carry nothing
     var was=prev; prev='';
     if(cur && was==='school' && /^\s*(?:P\.?\s*O\.?|P\.?\s*S\.?|Dist|Vill|Pin|Block|Sub[-\s]?div|ডাক|জেলা|গ্রাম|থানা)\b/i.test(L)){ cur.school+=',\n'+L.replace(/\s*,\s*/g,',\n'); prev='school'; return; }
     if(cur && was==='scale' && /^\s*(?:as per|vide|\(|G\.?\s*O)/i.test(L) && !READER.dates(L).some(function(x){return x.iso>='2009-01-01';})){ cur.scale+='\n'+L; prev='scale'; return; }
     // a label with nothing after it ("Appointment & Pay Details:", "Certificate (পাতা 16): Certified that:")
-    if(/:\s*$/.test(L) && L.replace(/\(পাতা[^)]*\)/g,'').split(/\s+/).length<=8) return;
+    if(/:\s*$/.test(L) && (L.replace(/\(পাতা[^)]*\)/g,'').split(/\s+/).length<=8 || !/\d/.test(L))) return;
+    // header row of a copied table
+    if((L.match(/name of post|scale of pay|date of appoint|pay and special|whether post|nature of appointment|date of termination|col\s*\(\d+\)/gi)||[]).length>=3) return;
+    // a right-page row (reason | leave | signatures): only verification / resignation / transfer matter, the app writes the rest
+    var rightRow=/\|/.test(L) && (/\|\s*(?:no\s*leave|no\s*ml|some\s*m\.?\s*l)/i.test(L) || /\|\s*(?:sri\s*)?pankaj|\|\s*[A-Z][a-z]+\s+(?:Kumar\s+)?M[oa]nd[ao]l\b/.test(L) || /\|[^|]*\b(?:Headmaster|Head\s*Master|Teacher[\s-]*in[\s-]*Charge|Secretary)\b/.test(L) || /^\s*(?:notional|annual|actual|pay\s*revision|revision|increment|10\s*y)[^|]{0,40}\|/i.test(L));
     L=L.replace(/^(?:Institution|Joining\s*&\s*Approval|Permanent\s*Post|Reason\s*for\s*termination|Pay\s*&\s*Increment\s*History|Appointment\s*&\s*Pay\s*Details|Pay\s*&\s*Increment\s*Entries)\s*:\s*/i,'');
     if(/^Scale\s*:/i.test(L)) L=L.replace(/^Scale\s*:\s*/i,'Scale of pay: ');
     var ds=READER.dates(L), d0=ds.length?ds[0].iso:'';
@@ -825,29 +835,33 @@ function parseFree(lines){
     var mlRe=/\b(?:M\.?\s*L\.?|medical\s*leave)\b[^0-9]{0,25}from\s+(\d{1,2}\s*[.\-\/]\s*\d{1,2}\s*[.\-\/]\s*\d{2,4})\s+to\s+(\d{1,2}\s*[.\-\/]\s*\d{1,2}\s*[.\-\/]\s*\d{2,4})/gi, mm, mlDays=0, mlFrom='';
     while((mm=mlRe.exec(L))){ var a=pdate(mm[1]), b2=pdate(mm[2]); if(a&&b2&&b2>=a){ mlDays+=Math.round((SB.pd(b2)-SB.pd(a))/86400000)+1; if(!mlFrom) mlFrom=a; } }
     if(mlDays) R.leave.push({from:mlFrom, mlTaken:mlDays, note:'ছুটির তারিখ থেকে গোনা — বইয়ের সঙ্গে মিলিয়ে নিন'});
+    if(rightRow && /^\s*\d{1,2}\s*[.\-\/]\s*\d{1,2}\s*[.\-\/]\s*\d{2,4}|\bpay\s*:/i.test(L)) rightRow=false; // a pay line that also names the leave
+    if(rightRow && !/verif|certif|resign|transferred|released/i.test(L)) return;
     if(/\b(?:m\.?\s*l\.?|medical\s*leave|half\s*pay|h\.?\s*a\.?\s*p\.?|h\.?\s*p\.?\s*l\.?)\b|মেডিক্যাল|অর্ধ\s*বেতন|হাফ/i.test(L) && !FR.kindw.test(L) && d0 && !mlDays){
       var ml=/(?:m\.?\s*l\.?|medical(?:\s*leave)?|মেডিক্যাল(?:\s*ছুটি)?)\D{0,12}(\d{1,3})/i.exec(L), hp=/(?:half\s*pay(?:\s*leave)?|h\.?\s*a\.?\s*p\.?|h\.?\s*p\.?\s*l\.?|হাফ[^\d]{0,10}|অর্ধ\s*বেতন[^\d]{0,10})\D{0,12}(\d{1,3})/i.exec(L);
       var mN=ml?+ml[1]:0, hN=hp?+hp[1]:0; if(mN||hN){ R.leave.push({from:d0, mlTaken:mN, hapTaken:hN}); return; } }
     var pay=freePay(L), endD=rangeEnd(L);
     // resignation
     if(/\bresign/i.test(L) && d0){ var on=/\bon\s+(\d{1,2}\s*[.\-\/]\s*\d{1,2}\s*[.\-\/]\s*\d{2,4})/i.exec(L), acc=/accepted\s+by\s+(.+?)(?:\s*\[|$)/i.exec(L), tm=/\b(A\.\s*N\.|F\.\s*N\.|\d{1,2}\s*[AP]\.?\s*M\.?)/i.exec(L);
-      addRelease({date:on?pdate(on[1]):d0, reason:'Resignation', type:'resign', accepted:acc?acc[1].replace(/[\s.]+$/,''):'', time:tm?tm[1].replace(/\s+/g,''):''}); return; }
+      addRelease({date:on?pdate(on[1]):d0, reason:'Resignation', type:'resign', accepted:acc?acc[1].split('|')[0].replace(/[\s.]+$/,''):'', time:tm?tm[1].replace(/\s+/g,''):''}); return; }
     // transfer / release (a pay may be on the same line: that row runs till the release)
     if(FR.release.test(L) && d0 && !/\bincrement\b/i.test(L)){
-      if(pay && endD){ R.pays.push({date:d0, pay:pay, kind:'inc', line:L, end:''}); }
-      var rd=endD||(/\bon\s+(\d{1,2}\s*[.\-\/]\s*\d{1,2}\s*[.\-\/]\s*\d{2,4})/i.exec(L)||[])[1]; rd=rd&&rd.length>10?pdate(rd):rd; rd=rd||d0;
+      if(pay && endD && !opt.noPay){ R.pays.push({date:d0, pay:pay, kind:'inc', line:L, end:''}); }
+      var rd=endD||(/\bon\s+(\d{1,2}\s*[.\-\/]\s*\d{1,2}\s*[.\-\/]\s*\d{2,4})/i.exec(L)||[])[1]; rd=rd&&!/^\d{4}-\d\d-\d\d$/.test(rd)?pdate(rd):rd; rd=rd||d0;
       var ut=/transferred\s+through\s*["'“‘]?\s*([A-Za-z]+)/i.exec(L);
       addRelease({date:rd, reason:ut?"Transferred through '"+ut[1]+"'":'Released', type:'release'}); if(rd) lastDate=rd; return; }
     var isSchool=FR.school.test(L) && !isSignLine(L) && !/^\s*(?:he|she|his|her|the school|school came)\b/i.test(L) && !/\bschools\b|district inspector|D\.?\s*I\.?\s*of/i.test(L) && !FR.memo.test(L.replace(/appointed|appointment/ig,'')) && !(pay && /\|/.test(L) && !/^[^|]*(?:institution|school|vidyalaya)/i.test(L));
     if(isSchool){ var post=(/head\s*master|headmistress|প্রধান শিক্ষক/i.exec(L)||[])[0]?'Headmaster':(/assistant|asstt?\.|সহকারী/i.test(L)?'Assistant Teacher':'');
-      var sc=school(d0, cleanSchool(L), post);
+      var sc=school(opt.date||d0, cleanSchool(L), post);
       if(FR.scale.test(L) && !sc.scale){ var mS=/(?:PB|pay\s*band|scale)[^|]*/i.exec(L); if(mS) sc.scale=mS[0].trim(); }
-      if(d0 && pay) R.pays.push({date:d0, pay:pay, kind:'join', school:sc.school, line:L});
+      if(d0 && pay && !opt.noPay) R.pays.push({date:d0, pay:pay, kind:'join', school:sc.school, line:L});
       if(d0) lastDate=d0; prev='school'; return; }
     if(FR.scale.test(L) && !(d0 && pay && FR.kindw.test(L)) && !/fix|ropa/i.test(L)){ if(!cur) cur=school('', '', ''); if(!cur.scale){ var sv=L.replace(/^(?:scale(?:\s*of\s*pay)?|বেতনক্রম)\s*[:：\-]\s*/i,''); var at=sv.search(/\bPB\s*-?\s*\d|\d{3,5}\s*-\s*\d{2,4}\s*-/i); cur.scale=at>0?sv.slice(at):sv; prev='scale'; } if(!d0||!pay) return; }
     if(/\bverif|certified that|certificate of/i.test(L)){ addNote(d0,L); return; }
     var isPayLine=d0 && pay && (/\bpay\b|rs\.?|₹|বেতন/i.test(L) || FR.kindw.test(L));
+    if(opt.noPay && FR.memo.test(L)){ addNote(d0,L,opt); return; }
     if(FR.memo.test(L) && !isPayLine){ addNote(d0,L); if(/\b(?:memo|g\.?\s*o|no)\b/i.test(L)) R.refs.push({kind:'ref', text:L}); return; }
+    if(opt.noPay){ if(d0) lastDate=d0; if(L.length>12 && !/^(?:next date|pay is|date of fixation)/i.test(L)) addNote(d0,L,opt); return; }
     if(d0 && pay){ var kw=L.toLowerCase(), kd='inc';
       if(/actual\s*benefit|actually\s*paid/.test(kw) && !/notional/.test(kw)) kd='payrow';
       else if(/increment/.test(kw)) kd=/10\s*y|ten\s*year|cas\b|career\s*adv/.test(kw)&&!/notional annual/.test(kw)?'benefit':'inc';
@@ -865,7 +879,39 @@ function parseFree(lines){
       var reason=/notional/i.test(kw)?'':(kd==='payrow'?'Actual benefit (ROPA-2019)':'');
       R.pays.push({date:d0, pay:pay, kind:kd, school:kd==='join'&&cur?cur.school:'', line:L, end:endD, reason:reason}); lastDate=d0; return; }
     if(d0) lastDate=d0;
-  });
+  }
+  // a table row: cells | ... | date(s) | pay(s) | end date(s)
+  var CELLSPLIT=/\.\s+(?=(?:The|Recog\w*|Up\s*graded|Upgraded|School|Recommend\w*|He|His|Appointed|Approved|Pay|Next|Date|Social|No\s+increment|No\s+arrear|FIXATION|Fixation|Service|Sanction\w*)\b)|\s+(?=\d\.\s+[A-Z])/;
+  var DRE=/\d{1,2}\s*[.\-\/]\s*\d{1,2}\s*[.\-\/]\s*\d{2,4}/g;
+  function rowLine(L){
+    if(mode==='leave'||mode==='skip'||/^§H /.test(L)) return false;
+    var cells=L.replace(/^(?:Entry|Row)\s*:\s*/i,'').split('|').map(function(c){ return c.trim(); });
+    if(cells.length<4) return false;
+    var di=-1; for(var i=1;i<cells.length;i++){ var c=cells[i].replace(/[—–\-]\s*$/,''), ds=c.match(DRE)||[]; if(ds.length && c.replace(DRE,'').replace(/notionally|cash\s*benefit|cash\s*benifit|w\.?e\.?f\.?|[\/\s,.()]|on/gi,'').length<12){ di=i; break; } }
+    if(di<0) return false;
+    var pi=-1; for(var k=di+1;k<cells.length;k++){ if(/\d{1,3},\d{3}|\b\d{4,6}\b/.test(cells[k].replace(DRE,'')) ){ pi=k; break; } }
+    if(pi<0) return false;
+    var dates=(cells[di].match(DRE)||[]).map(pdate).filter(Boolean);
+    var payTxt=cells[pi].replace(/\([^)]*\)/g,' ').replace(/(?:\+|G\.?\s*P\.?|grade\s*pay)\s*(?:rs\.?)?\s*[-:]?\s*\d+/gi,' ');
+    var pays=(payTxt.match(/\d{1,3}(?:,\d{3})+|\b\d{4,6}\b/g)||[]).map(function(x){ return +x.replace(/,/g,''); }).filter(function(n){ return n>=3000 && n<=400000; });
+    var ends=[]; for(var e=pi+1;e<cells.length;e++){ ends=(cells[e].match(DRE)||[]).map(pdate).filter(Boolean); if(ends.length) break; }
+    if(!dates.length || !pays.length) return false;
+    var text=L;
+    // the words in the first cells (post, school, recognition, notes, scale) go through the normal reader, without making pay rows
+    var rowDate=dates[0];
+    cells.slice(0,di).forEach(function(c,ci){ if(!c || /^(?:—|-|permanent|temporary|officiating|-do-|do)\b/i.test(c) && c.length<25) return;
+      c.split(CELLSPLIT).forEach(function(sn){ sn=sn.replace(/^\d\.\s+/,'').trim(); if(sn) one(sn,{noPay:true, date:rowDate}); }); });
+    var n=Math.min(dates.length, pays.length);
+    if(pays.length>dates.length && dates.length===1) n=1;
+    for(var r=0;r<n;r++){
+      var kd='inc', kw=text.toLowerCase();
+      if(/ropa|fixation|\bfixed\b|revision/.test(kw) && r===0 && !/increment/.test(cells.slice(0,di).join(' ').toLowerCase()) && /ropa|fix/i.test(cells.slice(0,di).join(' ')+cells[pi])) kd='fix';
+      if(r>0 && dates[r]===dates[r-1]) kd='benefit';
+      if(cur && !cur.date && kd!=='fix') cur.date=dates[r];
+      R.pays.push({date:dates[r], pay:pays[r], kind:kd, line:text, end:ends[r]||(n===1?ends[0]:'')||''});
+      lastDate=dates[r]; }
+    return true; }
+  lines.forEach(function(L){ if(!rowLine(L)) one(L); });
   R.notes.forEach(function(n){ if(n.sch){ n.sd=n.sch.date; if(!n.date) n.date=n.sd; } delete n.sch; });
   R.schools.forEach(function(s){ delete s._k; });
   return R; }
@@ -880,11 +926,11 @@ function memoParts(L){ L=bnDigits(L);
   return {no:no?no[1].replace(/[.,]+$/,''):'', date:dt?pdate(dt[1]):(ds.length?ds[ds.length-1].iso:''), wef:wef?pdate(wef[1]):'', by:by?by[1].replace(/[\s,.]+$/,''):''}; }
 function noteToJoin(L){ L=bnDigits(L); var f={}, m;
   // appointed / recommended through whom, with that memo
-  m=/(?:appointed|recommended)\s+(?:through|by)\s+([A-Za-z.]+(?:\s*\([A-Z]+\))?)/i.exec(L); if(m) f.through=m[1].trim();
-  if(/recommend|S\.?S\.?C|appointed through|সুপারিশ/i.test(L)){ m=/memo\s*no\.?\s*[:\-]?\s*([^\],]+?)\s*,?\s*(?:dt|dated|date)\.?\s*(\d{1,2}\s*[.\-\/]\s*\d{1,2}\s*[.\-\/]\s*\d{2,4}|\d{1,2}(?:st|nd|rd|th)?\s+[A-Za-z]+,?\s+\d{4})/i.exec(L); if(m){ f.apptMemo=m[1].replace(/[.,]+$/,''); f.apptDate=pdate(m[2]); } }
+  m=/(?:appointed|recommend(?:ed)?)\s+(?:through|by)\s+([A-Za-z.]+(?:\s*\([A-Z]+\))?)/i.exec(L); if(m && !/^M\.?\s*C\.?$/i.test(m[1].trim())) f.through=m[1].trim();
+  if(/recommend|S\.?S\.?C|appointed through|সুপারিশ/i.test(L)){ m=/memo\s*no\.?\s*[:\-]?\s*([^\],]+?)\s*,?\s*(?:dt|dated|date)\.?\s*[:\-]?\s*(\d{1,2}\s*[.\-\/]\s*\d{1,2}\s*[.\-\/]\s*\d{2,4}|\d{1,2}(?:st|nd|rd|th)?\s+[A-Za-z]+,?\s+\d{4})/i.exec(L); if(m){ f.apptMemo=m[1].replace(/[.,]+$/,''); f.apptDate=pdate(m[2]); } }
   // managing committee resolution
-  m=/(?:resolution|resol)\.?\s*(?:no\.?\s*([^\s,\]]+))?\s*,?\s*(?:meeting\s*no\.?\s*([^\s,\]]+))?[^\d\]]{0,25}?(?:dt|dated|date)\.?\s*(\d{1,2}\s*[.\-\/]\s*\d{1,2}\s*[.\-\/]\s*\d{2,4}|\d{1,2}(?:st|nd|rd|th)?\s+[A-Za-z]+,?\s+\d{4})/i.exec(L);
-  if(m){ if(m[1]) f.mcRes=m[1].replace(/[.,]+$/,'')+(m[2]?' (meeting No. '+m[2]+')':''); f.mcDate=pdate(m[3]); }
+  m=/(?:resolution|resol)\.?\s*(?:no\.?)?\s*[-:]?\s*(\d[^\s,\]]*)?\s*,?\s*(?:meeting\s*no\.?\s*([^\s,\]]+))?[^\d\]]{0,25}?(?:dt|dated|date)\.?\s*[:\-]?\s*(\d{1,2}\s*[.\-\/]\s*\d{1,2}\s*[.\-\/]\s*\d{2,4}|\d{1,2}(?:st|nd|rd|th)?\s+[A-Za-z]+,?\s+\d{4})/i.exec(L);
+  if(m){ if(m[1]) f.mcRes=m[1].replace(/[.,]+$/,'').replace(/^-/,'')+(m[2]?' (meeting No. '+m[2]+')':''); f.mcDate=pdate(m[3]); }
   // approval of service
   if(/approv|অনুমোদ/i.test(L)){ var a=memoParts(L.slice(L.search(/approv|অনুমোদ/i)));
     m=/approved.*?(?:vide\s*)?(?:memo\s*)?no\.?\s*[:\-]?\s*([^\s,\]]+)/i.exec(L); f.approvalMemo=m?m[1].replace(/[.,]+$/,''):a.no; f.approvalDate=a.date; f.approvedBy=a.by; f.approvalWef=a.wef; }
@@ -903,7 +949,7 @@ function noteKind(t){ var L=String(t||'');
   if((/permanent/i.test(L) && /post|service|retain|confirm|appoint/i.test(L)) || /\bretained\b/i.test(L)) return 'status';
   if(noteToJoin(L)) return 'join';
   return 'note'; }
-function stripSign(t){ return String(t||'').replace(/\s*[`'"]?\s*\[[^\]]*(?:স্বাক্ষর|sign|headmaster|head master|counter|inspector)[^\]]*\]\s*[`'".]*/gi,' ').replace(/\(?পাতা\s*\d+\)?/g,'').replace(/^\s*(?:verification|certificate of verification)\s*[:\-]\s*/i,'').replace(/\s{2,}/g,' ').trim(); }
+function stripSign(t){ t=String(t||''); var at=t.search(/(?:service|leave)[\s\/]*(?:leave\s*)?(?:period|verified)|certified that/i); if(at>0) t=t.slice(at); return t.replace(/\s*[`'"]?\s*\[[^\]]*(?:স্বাক্ষর|sign|headmaster|head master|counter|inspector)[^\]]*\]\s*[`'".]*/gi,' ').replace(/\(?পাতা\s*\d+\)?/g,'').replace(/^\s*(?:verification(?:\s*certificate)?|certificate of verification)\s*(?:\([^)]*\))?\s*[:\-]\s*/i,'').replace(/\s{2,}/g,' ').trim(); }
 function verifyEvent(t, fallbackDate){ var L=bnDigits(t), m=/from\s+(\d{1,2}\s*[.\-\/]\s*\d{1,2}\s*[.\-\/]\s*\d{2,4})\s*(?:to|till|upto)\s+(\d{1,2}\s*[.\-\/]\s*\d{1,2}\s*[.\-\/]\s*\d{2,4})/i.exec(L);
   var from=m?pdate(m[1]):'', to=m?pdate(m[2]):'';
   var sg=/\[[^\]]*?(\d{1,2}\s*[.\-\/]\s*\d{1,2}\s*[.\-\/]\s*\d{2,4})[^\]]*\]/.exec(L), sd=sg?pdate(sg[1]):'';
@@ -912,7 +958,7 @@ function verifyEvent(t, fallbackDate){ var L=bnDigits(t), m=/from\s+(\d{1,2}\s*[
   var e={type:'verify', style:cert?'cert':'stamp', from:from, to:to, date:(cert?to:(to||sd))||sd||fallbackDate};
   if(cert){ if(di) e.di=di[1].replace(/counter\s*signed\s*:?/i,'').trim(); } else e.text=stripSign(t);
   return e; }
-function isSignLine(t){ return /স্বাক্ষর|সিল|signature|\bsigned\b|\bseal\b|counter\s*sign|\(?পাতা\s*\d/i.test(String(t||'')); }
+function isSignLine(t){ t=String(t||''); return /স্বাক্ষর|সিল|signature|\bsigned\b|\bseal\b|\bstamps?\b|counter\s*sign|\(?পাতা\s*\d/i.test(t) || /^\s*(?:Headmaster|Head\s*Master|Headmistress|Teacher[\s-]*in[\s-]*Charge|Secretary|H\.\s*M\.)\b/i.test(t); }
 function parsePasted(txt){
   var R={info:{}, pays:[], refs:[], scanned:[], conf:null, ai:true, pasted:true, leave:[], text:txt};
   var t=String(txt||'').replace(/\r/g,'');
