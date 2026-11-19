@@ -96,7 +96,8 @@ function parse(doc){
     var mH=/height[^0-9]{0,20}(\d{2,3}\s*(?:c\.?\s*m|cm))/i.exec(t); if(mH && !R.info.height) R.info.height=mH[1].replace(/\s+/g,' ').toUpperCase();
     // pay rows: a line with a date and an amount
     var ds=dates(t), am=amounts(t);
-    if(ds.length && am.length){ R.pays.push({date:ds[0].iso, end:ds[1]?ds[1].iso:'', pay:am[am.length-1].n, kind:kind(t), line:t, page:l.page}); }
+    var mp=/\bpay\b[^0-9]{0,12}(\d{1,3}(?:,\d{2,3})+|\d{4,6})/i.exec(t); var payN=mp?+mp[1].replace(/,/g,''):(am.length?am[am.length-1].n:0);
+    if(ds.length && payN){ R.pays.push({date:ds[0].iso, end:ds[1]?ds[1].iso:'', pay:payN, kind:kind(t), line:t, page:l.page}); }
     // references
     var re=/\b(G\.?\s*O\.?|Memo\.?|Notification|Resolution)\s*(?:No\.?)?\s*[:\-]?\s*([A-Za-z0-9()\/\-.&]+(?:\s*\([A-Za-z0-9]+\))?(?:[\/\-][A-Za-z0-9()\/\-.&]+)*)[^\n]{0,40}?(?:dt\.?|dated|date)\s*[:\-]?\s*(\d{1,2}\s*[.\-\/]\s*\d{1,2}\s*[.\-\/]\s*\d{2,4}|\d{1,2}(?:st|nd|rd|th)?\s+[A-Za-z]+,?\s+\d{4})/gi, m;
     while((m=re.exec(t))){ var dd2=dates(m[3]); R.refs.push({kind:m[1].replace(/\s/g,''), no:m[2], date:dd2.length?dd2[0].iso:'', text:(m[1].replace(/\s+/g,'')+' No. '+m[2]+' dt. '+m[3]).replace(/\s+/g,' ')}); }

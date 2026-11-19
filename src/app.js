@@ -386,15 +386,18 @@ function guessComm(d){ var L=(A.S.commissions||[]).filter(function(c){return c.d
 function prepPays(R,T){
   if(R._prep) return; R._prep=true;
   R.pays.sort(function(a,b){ return a.date.localeCompare(b.date); });
-  var P=R.pays, prev=null;
+  var P=R.pays, prev=null, prevDate='';
   P.forEach(function(p,i){
+    if(prev!=null && p.pay>prev*1.8 && p.kind!=='join'){ p.kind='fix'; p.auto='বেতন একলাফে অনেক বেড়েছে, তাই পে-রিভিশন/ফিক্সেশন ধরা হলো'; }
+    else if(prev!=null && p.kind==='inc' && p.date.slice(5)!=='07-01' && p.pay===prev && p.date!==prevDate){ p.kind='join'; p.auto='১ জুলাই নয় আর বেতন একই, তাই নতুন স্কুলে যোগদান ধরা হলো — ঠিক না হলে বদলে দিন'; }
+    else if(prev!=null && p.kind==='inc' && p.date.slice(5)!=='07-01' && p.date.slice(5)!=='01-01' && p.pay>prev){ p.kind='benefit'; p.auto='১ জুলাই নয়, তাই ১০ বছর/CAS সুবিধা ধরা হলো — ঠিক না হলে বদলে দিন'; }
     if(p.kind==='fix' && p.date<'2016-01-01'){ p.kind='fix2009'; }
     var nxt=null; for(var j=i+1;j<P.length;j++){ nxt=P[j].pay; break; }
     var ref=prev!=null?prev:(nxt||0);
     if(ref && p.pay<ref*0.7){ p.sus=true; return; }
-    prev=p.pay; });
+    prev=p.pay; prevDate=p.date; });
   var hasJoin=(T.events||[]).some(function(e){return e.type==='join';});
-  if(!hasJoin && P.length && !P.some(function(p){return p.kind==='join' && !p.sus;})){ var f=P.filter(function(p){return !p.sus;})[0]; if(f){ f.kind='join'; f.auto='প্রথম সারি, তাই যোগদান ধরা হলো'; } }
+  if(!hasJoin && P.length){ var f=P.filter(function(p){return !p.sus;})[0]; if(f && f.kind!=='join'){ f.kind='join'; f.auto='প্রথম সারি, তাই যোগদান ধরা হলো'; } }
 }
 function drawTeacherImport(){
   var R=IMP.R, T=A.T[A.tid], h='<div class="dlgbox"><div class="dlgh"><b>ফাইল থেকে যা পাওয়া গেল</b><button class="ib" data-act="closeD">✕</button></div><div class="dlgb">'+scanNote(R);
@@ -672,7 +675,7 @@ function aiImportTeacher(file){
 }
 
 // ---------- paste from Gemini app (no key needed) ----------
-var PASTE_PROMPT='এই ছবিগুলো পশ্চিমবঙ্গের এক শিক্ষকের হাতে লেখা সার্ভিস বুকের পাতা। হাতের লেখা মন দিয়ে পড়ে নিচের ধাঁচে, শুধু এই লাইনগুলো লেখো (অন্য কোনো কথা লিখবে না):\n\n'+
+var PASTE_PROMPT='এই ছবিগুলো পশ্চিমবঙ্গের এক শিক্ষকের হাতে লেখা সার্ভিস বুকের পাতা। হাতের লেখা মন দিয়ে পড়ে নিচের ধাঁচে, শুধু এই লাইনগুলো লেখো। টেবিল, বুলেট, মোটা অক্ষর, শিরোনাম বা অন্য কোনো কথা লিখবে না — প্রতিটা লাইন NAME:/DOB:/ROW: এরকম শব্দ দিয়ে শুরু হবে। উদাহরণ:\nROW: 01-07-2009 | 16440 | Increment |\nROW: 17-12-2013 | 18520 | Join | Dhamsa P.C. Sen Institution\nROW: 01-01-2016 | 50900 | ROPA |\n\nএবার এই ধাঁচে লেখো:\n'+
  'NAME: (নাম, ইংরেজিতে যেমন লেখা)\nDOB: DD-MM-YYYY\nFATHER: (বাবা/স্বামীর নাম)\nRESIDENCE: (ঠিকানা)\nHEIGHT: \nMARK: (শনাক্তকরণ চিহ্ন)\nQUAL: (যোগ্যতা)\n'+
  'SCHOOL: যোগদানের তারিখ DD-MM-YYYY | পদ | স্কুলের নাম ও পুরো ঠিকানা (এক লাইনে, কমা দিয়ে) | বেতনক্রম (কলম 2-এ যা লেখা)\n'+
  'RECOG: (ঠিক আগের SCHOOL-এর কলম 1-এর নিচে লেখা স্কুলের স্বীকৃতির প্রতিটা লাইন, একটা করে)\n'+
