@@ -1,0 +1,1292 @@
+<!DOCTYPE html>
+<html lang="bn"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>শিক্ষকদের সার্ভিস বুক তৈরি করার অ্যাপ</title>
+<link rel="stylesheet" href="fonts/fonts.css"><link rel="manifest" href="manifest.webmanifest"><link rel="icon" href="icon-192.png"><link rel="apple-touch-icon" href="icon-192.png"><meta name="theme-color" content="#1f3b73">
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:"Noto Sans Bengali","Hind Siliguri",system-ui,sans-serif;background:#f3f1ec;color:#1d1d1d;font-size:15px}
+header.top{position:sticky;top:0;z-index:5;background:#1f3b73;color:#fff;display:flex;justify-content:space-between;align-items:center;padding:10px 12px;gap:8px}
+header .tl{display:flex;align-items:center;gap:8px;min-width:0}header .sch{font-size:12px;opacity:.85;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.st{font-size:11px;opacity:.85;white-space:nowrap}.ib{background:none;border:0;color:inherit;font-size:20px;padding:2px 6px;cursor:pointer}
+.pad{padding:12px;max-width:860px;margin:0 auto}.muted{color:#666}.sm{font-size:13px;margin:8px 0}
+.warn{background:#fff3cd;color:#6b4e00;padding:8px 12px;font-size:13px}
+.btn{border:1px solid #b9b4a8;background:#fff;border-radius:8px;padding:9px 14px;font:inherit;font-size:14px;cursor:pointer;color:#1d1d1d}
+.btn.pri{background:#1f3b73;border-color:#1f3b73;color:#fff}.btn.danger{color:#a3221b;border-color:#e2b4b0}.btn.sm2{padding:6px 10px;font-size:13px}.btn.block{display:block;width:100%;text-align:left;margin:6px 0}
+.row{display:flex}.gap{gap:8px}.wrap{flex-wrap:wrap}
+.card{background:#fff;border:1px solid #e1ddd3;border-radius:10px;padding:12px;margin:10px 0}
+.tcard{cursor:pointer}.tn{font-weight:700;font-size:16px}
+.empty{padding:24px;text-align:center;color:#777;background:#fff;border:1px dashed #ccc;border-radius:10px;margin:12px 0}
+.flag{color:#a3221b;font-size:13px;margin:4px 0}.flagbox{background:#fdecea;border:1px solid #f1b6b1;border-radius:10px;padding:10px 12px;margin-bottom:10px;font-size:13px;color:#7a1b15}.flagbox ul{margin:6px 0 0;padding-left:18px}
+.tabs{display:flex;overflow-x:auto;background:#fff;border-bottom:1px solid #ddd;position:sticky;top:44px;z-index:4}
+.tab{flex:1 0 auto;border:0;background:none;padding:11px 12px;font:inherit;font-size:14px;color:#555;border-bottom:3px solid transparent;cursor:pointer;white-space:nowrap}.tab.on{color:#1f3b73;border-bottom-color:#1f3b73;font-weight:700}
+.form .f{display:block;margin:10px 0}.form .f>span{display:block;font-size:13px;color:#444;margin-bottom:4px}
+.form input,.form textarea,.form select,.lf input{width:100%;font:inherit;font-size:15px;padding:9px 10px;border:1px solid #cfc9bc;border-radius:8px;background:#fff}
+.form textarea{font-family:"Roboto Condensed",Arial,sans-serif}.form small{display:block;color:#777;font-size:12px;margin-top:3px}
+.prev{background:#f7f5ef;border:1px solid #e6e1d4;border-radius:8px;padding:10px;margin:12px 0;font-size:13px}
+.prev pre,.evt{font-family:"Roboto Condensed",Arial,sans-serif;color:#1b3a9a;white-space:pre-wrap;margin:6px 0 0;font-size:13.5px;line-height:1.35}
+.ev .evh,.lcard .evh{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}.ed{font-weight:700}.et{color:#555;font-size:13px}.ep{margin-left:auto;font-weight:700;color:#1b3a9a}
+.evt{margin:6px 0 10px}
+.lgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:8px}@media(min-width:600px){.lgrid{grid-template-columns:repeat(4,1fr)}}
+.lf span{display:block;font-size:12px;color:#555;margin-bottom:2px}.lf input{padding:7px 8px}
+#dlg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:20;align-items:flex-end;justify-content:center}#dlg.on{display:flex}
+.dlgbox{background:#fff;width:100%;max-width:640px;max-height:92vh;display:flex;flex-direction:column;border-radius:14px 14px 0 0}.dlgbox.small{max-width:420px;border-radius:14px;margin-bottom:30vh}
+@media(min-width:700px){#dlg{align-items:center}.dlgbox{border-radius:14px}}
+.dlgh{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;border-bottom:1px solid #eee}.dlgb{padding:6px 14px;overflow:auto}.dlgf{display:flex;justify-content:flex-end;gap:8px;padding:10px 14px;border-top:1px solid #eee}
+h3{margin:22px 0 4px}h4{margin:14px 0 6px}.okbox{background:#e8f5e9;border:1px solid #b7dfbb;border-radius:10px;padding:10px 12px;font-size:13px;color:#1f5e25;margin-bottom:10px}.chk{display:flex;align-items:center;gap:8px;margin:8px 0;flex-wrap:wrap}.chk input[type=checkbox]{width:20px;height:20px}.imv{flex:1;min-width:140px;font:inherit;padding:7px 8px;border:1px solid #cfc9bc;border-radius:8px}.chk small{width:100%;padding-left:28px;color:#777}.imrow{display:grid;grid-template-columns:28px 1fr 1fr 1fr;gap:6px;align-items:center;margin:8px 0;border-bottom:1px dashed #e3ded2;padding-bottom:6px}.imrow input,.imrow select{font:inherit;font-size:14px;padding:6px;border:1px solid #cfc9bc;border-radius:6px;min-width:0}.imrow small{grid-column:1/-1;font-size:11.5px}.dabig{font-size:16px;margin-top:4px}.tw{overflow-x:auto}.dat{border-collapse:collapse;width:100%;font-size:13.5px;background:#fff}.dat th,.dat td{border:1px solid #e1ddd3;padding:7px 6px;text-align:right;white-space:nowrap}.dat th{background:#f7f5ef;text-align:center}.darow{display:grid;grid-template-columns:1fr 1fr;gap:0 10px}.darow .f:nth-child(3){grid-column:1/-1}details{margin:12px 0}summary{cursor:pointer;color:#1f3b73}
+#pagesWrap{margin-top:10px}.pfit{overflow:hidden;margin:0 auto 12px;box-shadow:0 1px 4px rgba(0,0,0,.25)}
+#toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:#222;color:#fff;padding:10px 16px;border-radius:20px;font-size:14px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:30;max-width:90vw}#toast.on{opacity:1}
+</style></head><body><div id="app"></div><script>window.SB_STANDALONE=true;</script><div id="dlg"></div><div id="toast"></div>
+<script>// ===== Service Book core logic (pure, no DOM) =====
+var SB = (function(){
+'use strict';
+
+// ---------- dates ----------
+function pd(s){ if(!s) return null; var m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(s); if(!m) return null; return Date.UTC(+m[1],+m[2]-1,+m[3]); }
+function ds(t){ var d=new Date(t); return d.getUTCFullYear()+'-'+p2(d.getUTCMonth()+1)+'-'+p2(d.getUTCDate()); }
+function p2(n){ return (n<10?'0':'')+n; }
+function addDays(s,n){ return ds(pd(s)+n*86400000); }
+function addYears(s,n){ var t=new Date(pd(s)); return ds(Date.UTC(t.getUTCFullYear()+n,t.getUTCMonth(),t.getUTCDate())); }
+function addMonths(s,n){ var t=new Date(pd(s)); var y=t.getUTCFullYear(), m=t.getUTCMonth()+n, d=t.getUTCDate();
+  var last=new Date(Date.UTC(y,m+1,0)).getUTCDate(); return ds(Date.UTC(y,m,Math.min(d,last))); }
+function daysBetween(a,b){ return Math.round((pd(b)-pd(a))/86400000)+1; } // inclusive
+function fmt(s,f){ if(!s) return ''; var m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(s); if(!m) return s;
+  var y=m[1], mo=m[2], d=m[3];
+  switch(f){ case 'dd.mm.yyyy': return d+'.'+mo+'.'+y; case 'dd-mm-yy': return d+'-'+mo+'-'+y.slice(2);
+    case 'dd/mm/yyyy': return d+'/'+mo+'/'+y; case 'dd.mm.yy': return d+'.'+mo+'.'+y.slice(2); default: return d+'-'+mo+'-'+y; } }
+function todayStr(){ var d=new Date(); return d.getFullYear()+'-'+p2(d.getMonth()+1)+'-'+p2(d.getDate()); }
+
+// ---------- words ----------
+var ONES=['','one','two','three','four','five','six','seven','eight','nine','ten','eleven','twelve','thirteen','fourteen','fifteen','sixteen','seventeen','eighteen','nineteen'];
+var TENS=['','','twenty','thirty','forty','fifty','sixty','seventy','eighty','ninety'];
+var ORD={one:'first',two:'second',three:'third',five:'fifth',eight:'eighth',nine:'ninth',twelve:'twelfth'};
+function w99(n){ if(n<20) return ONES[n]; return TENS[Math.floor(n/10)]+(n%10?' '+ONES[n%10]:''); }
+function words(n){ if(n===0) return 'zero'; var out=[];
+  if(n>=1000){ out.push(w99(Math.floor(n/1000))+' thousand'); n%=1000; }
+  if(n>=100){ out.push(ONES[Math.floor(n/100)]+' hundred'); n%=100; }
+  if(n>0) out.push(w99(n)); return out.join(' '); }
+function ordinalWords(n){ var w=w99(n), parts=w.split(' '), last=parts.pop();
+  var o=ORD[last] || (/y$/.test(last)? last.slice(0,-1)+'ieth' : last+'th'); parts.push(o); return parts.join(' '); }
+function ordSuffix(n){ var j=n%10,k=n%100; if(j==1&&k!=11) return 'st'; if(j==2&&k!=12) return 'nd'; if(j==3&&k!=13) return 'rd'; return 'th'; }
+var MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
+function dobLine(s,src){ if(!s) return ''; var t=new Date(pd(s)), d=t.getUTCDate(), m=t.getUTCMonth(), y=t.getUTCFullYear();
+  var a=d+ordSuffix(d)+' '+MONTHS[m]+' '+y;
+  var b='(The '+ordinalWords(d)+' '+MONTHS[m]+' '+words(y)+(src?' as per certificate issued by '+src:'')+')';
+  return a+'\n'+b; }
+function superannuation(dob,age){ if(!dob) return ''; var t=new Date(pd(dob)); var y=t.getUTCFullYear()+(age||60), m=t.getUTCMonth(), d=t.getUTCDate();
+  if(d===1) m=m-1; return ds(Date.UTC(y,m+1,0)); }
+function money(n){ if(n==null||n==='') return ''; n=Math.round(+n); var s=String(n);
+  if(s.length<=3) return s+'/-'; var last=s.slice(-3), rest=s.slice(0,-3); return rest.replace(/\B(?=(\d{2})+(?!\d))/g,',')+','+last+'/-'; }
+
+// ---------- settings ----------
+function genCells(entry,n,pct,rnd){ pct=+pct||3; rnd=+rnd||100; var c=[+entry]; for(var i=1;i<(n||40);i++){ c.push(Math.round(c[i-1]*(1+pct/100)/rnd)*rnd); } return c; }
+function defaultDA(){ return [
+  {from:'2021-01-01', pct:3, go:'78-F dt. 08.01.2021'},
+  {from:'2023-03-01', pct:6, go:'850-F dt. 24.02.2023'},
+  {from:'2024-01-01', pct:10, go:'56-F dt. 03.01.2024'},
+  {from:'2024-04-01', pct:14, go:'1090-F dt. 01.03.2024'},
+  {from:'2025-04-01', pct:18, go:''},
+  {from:'2026-10-01', pct:38, go:'2834-F(P2) dt. 04/08/2026'}]; }
+// pay + DA periods (separate page; does not touch service book)
+function payDaRows(T,S,H){
+  var da=(S.da||[]).filter(function(x){return x.from && x.pct!==''&&x.pct!=null;}).slice().sort(function(a,b){return a.from.localeCompare(b.from);});
+  if(!da.length) return [];
+  var pays=H.rows.filter(function(r){return r.kind==='pay' && r._pay!=null;}).map(function(r){return {d:r._date,p:r._pay};}).sort(function(a,b){return a.d.localeCompare(b.d);});
+  if(!pays.length) return [];
+  var today=todayStr(), start=da[0].from, posts=H.postings;
+  function inService(d){ return posts.some(function(p){ return d>=p.start && (!p.end || d<=p.end); }); }
+  function payOn(d){ var v=null; pays.forEach(function(x){ if(x.d<=d) v=x.p; }); return v; }
+  function daOn(d){ var v=null; da.forEach(function(x){ if(x.from<=d) v=x; }); return v; }
+  var b={}; pays.forEach(function(x){ if(x.d>=start) b[x.d]=1; }); da.forEach(function(x){ b[x.from]=1; });
+  posts.forEach(function(p){ if(p.start>=start) b[p.start]=1; if(p.end){ b[addDays(p.end,1)]=1; } });
+  var keys=Object.keys(b).filter(function(d){return d>=start && d<=today;}).sort(), out=[];
+  keys.forEach(function(d,i){ if(!inService(d)) return; var p=payOn(d), x=daOn(d); if(p==null||!x) return;
+    var end=keys[i+1]?addDays(keys[i+1],-1):''; posts.forEach(function(ps){ if(ps.end && d<=ps.end && (!end||ps.end<end)) end=ps.end; });
+    var amt=Math.round(p*(+x.pct)/100), last=out[out.length-1];
+    var isStart=posts.some(function(ps){return ps.start===d;});
+    if(last && last.basic===p && last.pct===+x.pct && last.to && addDays(last.to,1)===d && !isStart){ last.to=end; return; }
+    out.push({from:d, to:end, basic:p, pct:+x.pct, da:amt, total:p+amt, go:x.go||''}); });
+  return out;
+}
+function commByName(S,n){ var L=S.commissions||[]; for(var i=0;i<L.length;i++) if(L[i].name===n) return L[i]; return null; }
+function defaultCommissions(){ return [
+  {name:'ROPA-2009', method:'band', factor:1.86, round:10, incPct:3, incRound:10, date:'2006-01-01', actualFrom:'2009-04-01', go:'G.O. No. 46-SE(B)/5B-1/2009 dt. 27.02.2009', note:'আগের বেসিক × 1.86, পরের ১০ টাকায় রাউন্ড = পে-ব্যান্ডের বেতন, তার সঙ্গে গ্রেড পে। ইনক্রিমেন্ট (ব্যান্ড + গ্রেড পে)-র 3%, ১০-এ রাউন্ড।'},
+  {name:'ROPA-2019', method:'matrix', factor:2.57, incPct:3, cellRound:100, date:'2016-01-01', actualFrom:'2020-01-01', go:'G.O. No. 437-SE(P&B)/SL/5S-408/19 dt. 13.12.2019', note:'আগের (ব্যান্ড + গ্রেড পে) × 2.57, লেভেলের সমান বা ঠিক পরের ঘর। ইনক্রিমেন্ট = লেভেলের পরের ঘর।'},
+  {name:'7th Pay Commission (WB)', method:'matrix', factor:'', incPct:3, cellRound:100, date:'2026-01-01', actualFrom:'', go:'', note:'২২.০৭.২০২৬-এ গঠিত। গুণক ও পে-ম্যাট্রিক্স এখনও ঘোষণা হয়নি — G.O. বেরোলে পূরণ করুন (PDF থেকে পড়ানো যাবে)। ইনক্রিমেন্ট এখন 3%; বদলালে এখানে বদলান।'}
+]; }
+function defaultSettings(){
+  return {
+    schoolName:'', dateFmt:'dd-mm-yyyy',
+    incLabel:'Increment', notionalPrefix:'Notional ', leaveTextDefault:'No leave taken other than C.L.',
+    r2009:{pct:3, roundTo:10}, commissions:defaultCommissions(), da:defaultDA(),
+    inc:{month:7, day:1, minMonths:6},
+    leave:{mc:15, hap:15, hapCap:60},
+    pages:{part:3, finger:5, hist:8, leave:24}, lines:22,
+    levels:[
+      {id:'L14', commission:'ROPA-2019', name:'Level 14', pre:'PB-4 (Rs. 9000-40500) + GP Rs. 4700', cells:genCells(39900,33), note:'সরকারি অর্ডারে রেঞ্জ 39900–102800, ঘর মিলেছে'},
+      {id:'L15', commission:'ROPA-2019', name:'Level 15', pre:'PB-4 (Rs. 9000-40500) + GP Rs. 4800', cells:genCells(42600,33), note:'সরকারি অর্ডারে রেঞ্জ 42600–109800, ঘর মিলেছে'},
+      {id:'L10C', commission:'ROPA-2019', name:'Level 10C', pre:'PB-3 (min. Rs. 11720) + GP Rs. 4220', cells:genCells(42300,31), note:'প্রথম ১২টা ঘর 2830-F(P1) অর্ডারের সঙ্গে মিলেছে'}
+    ]
+  };
+}
+function mergeSettings(s){ var d=defaultSettings(); if(!s) return d; for(var k in s){ if(s[k]!==undefined) d[k]=s[k]; }
+  if(!d.commissions||!d.commissions.length) d.commissions=defaultCommissions();
+  if(!d.da) d.da=defaultDA();
+  ['r2009','inc','leave','pages'].forEach(function(k){ var dd=defaultSettings()[k]; d[k]=Object.assign({},dd,(s&&s[k])||{}); }); return d; }
+function levelById(S,id){ for(var i=0;i<S.levels.length;i++) if(S.levels[i].id===id) return S.levels[i]; return null; }
+
+// ---------- pronouns ----------
+function P(T){ var f=T.sex==='F'; return {He:f?'She':'He', he:f?'she':'he', his:f?'her':'his', His:f?'Her':'His', Sri:f?'Smt.':'Sri'}; }
+
+// ---------- event ordering ----------
+var ORDER={join:0, fix2009:1, status:2, fix:3, payrow:4, inc:5, benefit:6, note:7, verify:8, resign:9, release:9};
+var PAYTYPES={join:1, inc:1, fix:1, fix2009:1, benefit:1, payrow:1};
+function sortEvents(ev){ return ev.slice().sort(function(a,b){ var x=(a.date||'').localeCompare(b.date||''); if(x) return x;
+  var o=(ORDER[a.type]||0)-(ORDER[b.type]||0); if(o) return o; return (a.seq||0)-(b.seq||0); }); }
+
+// ---------- pay chain + history rows ----------
+function ceilTo(x,r){ return Math.ceil(x/r - 1e-9)*r; }
+function numOrNull(v){ if(v===''||v==null) return null; var n=+String(v).replace(/[^0-9.]/g,''); return isNaN(n)?null:n; }
+
+function computeHistory(T,S,LVM){
+  LVM=LVM||{};
+  var F=S.dateFmt, pr=P(T), evs=sortEvents(T.events||[]);
+  var st={sys:null, pay:null, level:null, idx:-1, post:'Temporary', appt:'Temporary', posting:null, fixes:[]};
+  var rows=[], flags=[], payRows=[], postings=[];
+  function fd(s){ return fmt(s,F); }
+  function lvl(){ return levelById(S,st.level); }
+  function setPay(p){ st.pay=p; if(st.sys==='matrix'){ var L=lvl(); st.idx=L?L.cells.indexOf(p):-1; } }
+  function nextIncr(){ if(st.pay==null) return null;
+    if(st.sys==='2009') return st.pay+ceilTo(st.pay*(st.incPct||S.r2009.pct)/100,(st.incRound||S.r2009.roundTo));
+    if(st.sys==='matrix'){ var L=lvl(); if(!L) return null; if(st.idx<0){ for(var i=0;i<L.cells.length;i++) if(L.cells[i]>st.pay) return L.cells[i]; return null; } return L.cells[st.idx+1]||null; }
+    return null; }
+  function notionalFor(date){ for(var i=0;i<st.fixes.length;i++){ var f=st.fixes[i]; if(f.actualFrom && date>=f.date && date<f.actualFrom) return true; } return false; }
+  function resolvePay(e,expected,label){ var ov=numOrNull(e.pay); var shown=ov!=null?ov:expected;
+    if(ov!=null && expected!=null && ov!==expected){ flags.push({id:e.id, date:e.date, msg:label+': বইয়ে '+ov+', হিসাবে আসে '+expected}); e._flag='হিসাবে আসে '+expected; }
+    else e._flag='';
+    var base=(ov!=null && e.follow!==false)? ov : (expected!=null?expected:ov);
+    return {shown:shown, base:base}; }
+  function postText(){ var p=st.posting; return p? (p.post+'\n'+p.school) : ''; }
+  function addPayRow(e,shown,c8,c9,extra){ var r={kind:'pay', ev:e.id, c1:'', c2:'', c3:st.post, c4:st.appt, c5:fd(e.showDate||e.date), c6:money(shown), c7:'', c8:c8||'', c9:c9||'', c10:'', c11:'', c12:'',
+      _date:e.date, _pay:(shown==null?null:+shown), _end:e.end||'', _isFix:e.type==='fix', posting:st.posting};
+    if(extra) for(var k in extra) r[k]=extra[k]; rows.push(r); payRows.push(r); return r; }
+
+  evs.forEach(function(e){
+    e._exp=null;
+    var lt=e.leaveText!=null&&e.leaveText!==''? e.leaveText : S.leaveTextDefault;
+    if(e.type==='join'){
+      var prevPay=st.pay;
+      if(e.sys==='2009'){ st.sys='2009'; st.level=null; st.incPct=null; st.incRound=null; }
+      else if(e.sys==='manual'){ st.sys='manual'; st.level=null; }
+      else if(e.sys){ st.sys='matrix'; st.level=e.sys; }
+      st.post=e.postStatus||'Temporary'; st.appt=e.apptStatus||'Temporary';
+      var ov=numOrNull(e.pay); var pay=ov!=null?ov:prevPay; e._exp=prevPay;
+      if(ov!=null && prevPay!=null && ov!==prevPay){ e._flag='আগের স্কুলের শেষ বেতন '+prevPay; flags.push({id:e.id,date:e.date,msg:'নতুন স্কুলে যোগদান: বইয়ে '+ov+', আগের স্কুলের শেষ বেতন '+prevPay}); } else e._flag='';
+      setPay(pay);
+      var L=lvl();
+      st.posting={id:e.id, post:e.post||'Assistant Teacher', school:e.school||'', start:e.date, end:null};
+      postings.push(st.posting);
+      var scale=e.scale || (L? (L.name+'\n'+L.pre):'');
+      var r=addPayRow(e,pay,e.c8||'',e.c9||'',{c1:postText(), c2:scale});
+      var notes=joinNotes(e,T,S,pr);
+      if((e.recog&&e.recog.trim()) || notes.length){
+        rows.push({kind:'span', ev:e.id, c1:(e.recog||'').trim(), spans:[{from:3,to:7,text:notes.join('\n')}], posting:st.posting});
+      }
+      if(e.noIncNote) rows.push({kind:'span', ev:e.id, spans:[{from:5,to:7,text:e.noIncNote}]});
+    }
+    else if(e.type==='inc'){
+      var exp=nextIncr(); e._exp=exp; var rp=resolvePay(e,exp,'ইনক্রিমেন্ট '+fd(e.date)); if(rp.base!=null) setPay(rp.base);
+      var notional = e.notional==='yes' || (e.notional!=='no' && notionalFor(e.date));
+      var c8=e.reason || ((notional?S.notionalPrefix:'')+S.incLabel);
+      addPayRow(e,rp.shown,c8,lt);
+    }
+    else if(e.type==='benefit'){
+      var exp2=null;
+      if(e.level){ st.sys='matrix'; var oldPay=st.pay; st.level=e.level; var L2=lvl(); if(L2){ for(var i=0;i<L2.cells.length;i++) if(L2.cells[i]>oldPay){ exp2=L2.cells[i]; break; } } }
+      else exp2=nextIncr();
+      e._exp=exp2; var rp2=resolvePay(e,exp2,'সুবিধা '+fd(e.date)); if(rp2.base!=null) setPay(rp2.base);
+      addPayRow(e,rp2.shown,e.reason||('Benefit on completion of 10 years\' service on '+fd(e.date)),lt);
+    }
+    else if(e.type==='payrow'){
+      var rp3=resolvePay(e,st.pay,'সারি '+fd(e.date)); if(rp3.base!=null) setPay(rp3.base);
+      addPayRow(e,rp3.shown,e.reason||'',lt);
+    }
+    else if(e.type==='fix2009'){
+      var ov2=numOrNull(e.pay);
+      var txt=e.text || ('The incumbent came under ROPA 2009 w.e.f. '+fd(e.wef||'2006-01-01')+' and accordingly '+pr.his+' pay is fixed at Rs. '+(ov2!=null?ov2:'____')+' in the '+(e.scaleText||'PB-4 (Rs. 9000-40500) + GP Rs. 4800')+(e.go?' as per '+e.go:'')+'.');
+      rows.push({kind:'span', ev:e.id, spans:[{from:2,to:7,text:txt}], c8:e.c8||'', posting:st.posting});
+      if(ov2!=null){ st.sys='2009'; st.level=null; setPay(ov2); addPayRow(e,ov2,e.reason||'Pay fixed as per ROPA 2009',lt); }
+      if(e.extra && e.extra.trim()) rows.push({kind:'span', ev:e.id, spans:[{from:5,to:7,text:e.extra.trim()}]});
+    }
+    else if(e.type==='fix'){
+      var comm=e.commission||'ROPA-2019', CM=commByName(S,comm)||{};
+      var method=e.method||CM.method||'matrix';
+      var factor=+(e.factor||CM.factor)||0; var pre=st.pay; var exp3=null, L3=null, t;
+      e._pre=pre; e._tgt=(pre!=null&&factor)?Math.round(pre*factor*100)/100:null;
+      if(method==='matrix'){
+        L3=levelById(S,e.level);
+        if(L3 && pre!=null && factor){ var tgt=pre*factor; for(var j=0;j<L3.cells.length;j++){ if(L3.cells[j]>=tgt-1e-6){ exp3=L3.cells[j]; break; } } }
+        e._exp=exp3; st.sys='matrix'; st.level=e.level;
+      } else if(method==='band'){
+        var gp=+(e.gp||0), rnd=+(CM.round||10);
+        if(pre!=null && factor){ e._band=ceilTo(pre*factor,rnd); exp3=e._band+gp; }
+        e._exp=exp3; st.sys='2009'; st.level=null; st.incPct=+(CM.incPct||S.r2009.pct); st.incRound=+(CM.incRound||S.r2009.roundTo);
+      } else { e._exp=null; st.sys='manual'; st.level=null; }
+      var rp4=resolvePay(e,exp3,'পে-রিভিশন '+fd(e.date)); if(rp4.base!=null) setPay(rp4.base);
+      var actual=e.actualFrom||'';
+      st.fixes.push({date:e.date, actualFrom:actual});
+      var go=e.go||CM.go||'';
+      if(method==='band'){
+        t='FIXATION OF PAY VIDE '+comm.toUpperCase()+'\nPay is notionally fixed at Rs. '+(e._band!=null?e._band:'____')+' in the '+(e.bandText||'Pay Band')+' plus Grade Pay Rs. '+(e.gp||'____')+' (total Rs. '+(rp4.shown!=null?rp4.shown:'____')+') on '+fd(e.date)+(e.preText?' from '+e.preText:'')+' as per option exercised'+(go?' vide '+go:'')+'.'+(actual?' Pay is actually paid w.e.f. '+fd(actual)+'.':'')+(e.nextInc?' Next date of increment '+fd(e.nextInc)+'.':'');
+      } else {
+        t='FIXATION OF PAY VIDE '+comm.toUpperCase()+'\nPay is notionally fixed at Rs. '+(rp4.shown!=null?rp4.shown:'____')+' on '+fd(e.date)+' in the '+(L3?L3.name:'Level ___')+(e.preText||(L3&&L3.pre)?' from '+(e.preText||L3.pre):'')+' as per option exercised'+(go?' vide '+go:'')+'.'+(actual?' Pay is actually paid w.e.f. '+fd(actual)+'.':'')+(e.nextInc?' Next date of increment '+fd(e.nextInc)+'.':'');
+      }
+      if(e.text) t=e.text;
+      rows.push({kind:'span', ev:e.id, c1:postText(), c2:'', spans:[{from:2,to:7,text:t}], box:true, posting:st.posting});
+      addPayRow(e,rp4.shown,e.reason||((actual&&actual>e.date?S.notionalPrefix:'')+'Pay Revision as per '+comm),lt);
+    }
+    else if(e.type==='status'){
+      var which=e.which||'both', ns=e.newStatus||'Permanent';
+      if(which==='post'||which==='both') st.post=ns; if(which==='appt'||which==='both') st.appt=ns;
+      var t2=e.text;
+      if(!t2){ if(which==='post') t2='The sanctioned post became '+ns.toLowerCase()+' from '+fd(e.date);
+        else if(which==='appt') t2=pr.His+' service is confirmed/approved as '+ns.toLowerCase()+' on and from '+fd(e.date);
+        else t2='The post and '+pr.his+' service became '+ns.toLowerCase()+' from '+fd(e.date);
+        t2+=(e.memo?' vide memo No. '+e.memo:'')+(e.memoDate?' dt. '+fd(e.memoDate):'')+(e.by?' by '+e.by:'')+'.'; }
+      rows.push({kind:'span', ev:e.id, spans:[{from:3,to:7,text:t2}], posting:st.posting});
+    }
+    else if(e.type==='note'){
+      var r2={kind:'span', ev:e.id, spans:[]};
+      if(e.textL) r2.spans.push({from:+(e.fromL||2),to:7,text:e.textL});
+      if(e.textR) r2.spans.push({from:8,to:12,text:e.textR});
+      rows.push(r2);
+    }
+    else if(e.type==='verify'){
+      var from=e.from||(st.posting&&st.posting.start)||'', to=e.to||e.date;
+      if(e.style==='cert'){
+        var p=st.posting||{};
+        var t3=e.text||('1. Certified that entire period of service of '+pr.Sri+' '+(T.name||'')+' ('+(T.desig||'A.T.')+') from '+fd(from)+' to '+fd(to)+' is verified from the Attendance, Acquittance Rolls and other records of the school and found to be correct.\n2. Certified that the employee has no liability with the school'+(e.di?' and the '+e.di:'')+'.\n3. '+pr.His+' service from '+fd(from)+' to '+fd(to)+' was continuous and without any break.');
+        rows.push({kind:'span', ev:e.id, spans:[{from:2,to:12,text:t3}], cert:true});
+      } else {
+        var t4=e.text||('Service/Leave Verified From '+fd(from)+' To '+fd(to)+' W.r.t. Acq. Roll, Leave Register, Attendance Register and other relevant records of the School and found correct.');
+        // attach to latest pay row's col12 if empty, else own row
+        var lastPay=payRows[payRows.length-1];
+        if(lastPay && !lastPay.c12 && e.attach!==false) lastPay.c12=t4; else rows.push({kind:'span', ev:e.id, spans:[{from:12,to:12,text:t4}]});
+      }
+    }
+    else if(e.type==='resign' || e.type==='release'){
+      var lp=payRows[payRows.length-1];
+      if(st.posting){ st.posting.end=e.date; }
+      if(lp){ lp._end=lp._end||e.date; lp._termEnd=e.date; }
+      if(e.type==='resign'){
+        var c8r=e.reason||('Resignation on '+fd(e.date)+(e.time?' at '+e.time:''));
+        var c9r=e.c9||('Resigned from the post on '+fd(e.date)+(e.time?' at '+e.time:'')+(e.accepted?' and resignation accepted by '+e.accepted:'')+'.');
+        if(lp){ lp.c8=c8r; lp.c9=c9r; lp._wideR=true; } else rows.push({kind:'span',ev:e.id,c8:c8r,spans:[{from:9,to:12,text:c9r}]});
+      } else {
+        var c8t=e.reason||'Released';
+        if(lp){ lp.c8=c8t; } else rows.push({kind:'span',ev:e.id,spans:[{from:8,to:8,text:c8t}]});
+        if(e.cert!==false){
+          var lv=(st.posting&&LVM[st.posting.id])||{}; var p2_=st.posting||{};
+          var t5=e.text||('Certified that -\n1. Service of '+pr.Sri+' '+(T.name||'')+', '+(T.desigShort||'A.T.')+' from '+fd(p2_.start)+' to '+fd(e.date)+' is satisfactory.\n2. '+pr.He+' has no liability with the school in respect of non recovery of loan and advance.\n3. '+pr.He+' enjoyed the following leave :\n   (a) Medical leave enjoyed = '+(e.ml!=null&&e.ml!==''?e.ml:(lv.ml||'NIL'))+(lv.ml||e.ml?' days':'')+'\n   (b) Half average pay leave enjoyed = '+(e.hapl||lv.hap||'NIL')+'\n   (c) Extraordinary leave enjoyed = '+(e.eol||lv.eol||'NIL')+'\n4. No court case / departmental proceeding is pending against '+(pr.he==='she'?'her':'him')+'.\n'+pr.He+' has been released from this school on '+fd(e.date)+(e.joinText?' '+e.joinText:' to join in another school')+'.');
+          rows.push({kind:'span', ev:e.id, spans:[{from:2,to:7,text:t5}], cert:true});
+        }
+      }
+      st.posting=null;
+    }
+  });
+  // end dates (col 7)
+  for(var i=0;i<payRows.length;i++){
+    var r=payRows[i]; if(r._end){ r.c7=fmt(r._end,F); continue; }
+    var nxt=null; for(var j=i+1;j<payRows.length;j++){ if(!payRows[j]._isFix || r._isFix){ nxt=payRows[j]; break; } }
+    var endD=null;
+    if(nxt && nxt._date>r._date) endD=addDays(nxt._date,-1);
+    if(r._termEnd && (!endD || r._termEnd<endD)) endD=r._termEnd;
+    if(r.posting && r.posting.end && (!endD || r.posting.end<endD)) endD=r.posting.end;
+    r.c7=endD?fmt(endD,F):'';
+  }
+  return {rows:rows, flags:flags, postings:postings, finalPay:st.pay, state:st};
+}
+
+function joinNotes(e,T,S,pr){
+  var F=S.dateFmt, L=[];
+  if(e.sanction) L.push(e.sanction);
+  if(e.through) L.push('Appointed through '+e.through+(e.apptMemo?' vide memo No. '+e.apptMemo:'')+(e.apptDate?' dt. '+fmt(e.apptDate,F):'')+'.');
+  if(e.mcRes) L.push(pr.He+' joined the school on '+fmt(e.date,F)+' vide M.C. Resolution No. '+e.mcRes+(e.mcDate?' dated '+fmt(e.mcDate,F):'')+'.');
+  if(e.approvedBy) L.push((e.mcRes||e.through?pr.His+' service was approved':'Approved')+' by '+e.approvedBy+(e.approvalMemo?' vide memo No. '+e.approvalMemo:'')+(e.approvalDate?' dt. '+fmt(e.approvalDate,F):'')+(e.approvalWef?' w.e.f. '+fmt(e.approvalWef,F):'')+'.');
+  if(e.extra) e.extra.split('\n').forEach(function(x){ if(x.trim()) L.push(x.trim()); });
+  if(L.length>1) return L.map(function(x,i){ return (i+1)+'. '+x; });
+  return L;
+}
+
+// ---------- increments generator ----------
+function genIncrements(T,S,upto){
+  var evs=T.events||[], have={}; evs.forEach(function(e){ if(e.type==='inc'||e.type==='benefit') have[e.date]=1; });
+  var joins=sortEvents(evs).filter(function(e){return e.type==='join';}); if(!joins.length) return [];
+  var ends=sortEvents(evs).filter(function(e){return e.type==='resign'||e.type==='release';});
+  var first=joins[0].date, elig=addMonths(first,S.inc.minMonths||6), out=[];
+  upto=upto||todayStr();
+  var y=+first.slice(0,4);
+  for(;;y++){
+    var d=y+'-'+p2(S.inc.month)+'-'+p2(S.inc.day); if(d>upto) break; if(d<elig) continue;
+    // must be inside some posting
+    var inside=false; joins.forEach(function(j,ix){ var end=null; ends.forEach(function(x){ if(x.date>=j.date && (!end||x.date<end)) end=x.date; });
+      var nextJ=joins[ix+1]; if(d>=j.date && (!end||d<=end) && (!nextJ||d<nextJ.date)) inside=true; });
+    if(inside && !have[d]) out.push({type:'inc', date:d});
+  }
+  return out;
+}
+
+// ---------- leave account ----------
+function computeLeave(T,S,H){
+  var F=S.dateFmt, SF=/\./.test(F)?'dd.mm.yy':'dd-mm-yy', ov=(T.leave&&T.leave.ov)||{}, posts=H.postings, today=todayStr();
+  if(!posts.length) return {rows:[], totals:{}};
+  var start=posts[0].start, rows=[], bMC=0, bHAP=0, bVD=0;
+  var anniv=function(s){ return start.slice(5); };
+  posts.forEach(function(p,pi){
+    var pEnd=p.end; var cur=p.start; var first=true, mlTaken=0, hapTaken=0, eolTaken=0;
+    while(true){
+      // next anniversary strictly after cur
+      var y=+cur.slice(0,4), a=y+'-'+start.slice(5); if(a<=cur) a=(y+1)+'-'+start.slice(5);
+      var to=addDays(a,-1); if(pEnd && pEnd<to) to=pEnd;
+      if(!pEnd && to>=today) break; // incomplete year
+      var o=ov[cur]||{}; var days=daysBetween(cur,to), full=(to===addDays(a,-1) && cur===addYears(a,-1));
+      var baseMC=full?S.leave.mc:Math.round(S.leave.mc*days/365), baseHAP=full?S.leave.hap:Math.round(S.leave.hap*days/365);
+      var eMC=o.mc!=null&&o.mc!==''?+o.mc:baseMC;
+      var capRoom=Math.max(0,(S.leave.hapCap||9999)-bHAP); var eHAP=o.hap!=null&&o.hap!==''?+o.hap:Math.min(baseHAP,capRoom);
+      var eVD=o.vd!=null&&o.vd!==''?+o.vd:0;
+      var c5a=bMC+eMC, c5b=bHAP+eHAP, c6=bVD+eVD;
+      var t7=+(o.t7||0), t8=+(o.t8||0), t9=+(o.t9||0);
+      bMC=c5a-t7; bHAP=c5b-t8; bVD=c6-t9;
+      mlTaken+=t7; hapTaken+=t8; eolTaken+=+(o.eol||0);
+      rows.push({kind:'leave', key:cur, posting:p, first:first, from:cur, to:to, c1:'',
+        c2a:fmt(cur,SF), c2b:fmt(to,SF), c3a:o.vf?fmt(o.vf,SF):'', c3b:o.vt?fmt(o.vt,SF):'',
+        c4a:eMC?String(eMC):'-', c4b:eHAP?String(eHAP):'-', c4c:eVD?String(eVD):'',
+        c5a:String(c5a), c5b:String(c5b), c6:c6?String(c6):'',
+        c7:t7?String(t7):'-', c8:t8?String(t8):'-', c9:t9?String(t9):'', c10a:o.m10a||'', c10b:o.m10b||'', c11:o.eol||'', c12a:o.s12a||'', c12b:o.s12b||'',
+        c13:String(bMC), c14:String(bHAP), c15:bVD?String(bVD):'', c16:'', c17:o.rem||'',
+        _auto:{mc:baseMC, hap:Math.min(baseHAP,capRoom)}, _o:o});
+      first=false;
+      if(pEnd && to>=pEnd) break;
+      cur=addDays(to,1);
+      if(cur>today) break;
+    }
+    p._ml=mlTaken; p._hap=hapTaken; p._eol=eolTaken;
+    if(pEnd){
+      var nkey='v_'+p.id, nt=(T.leave&&T.leave.notes&&T.leave.notes[nkey]);
+      var txt=nt!=null&&nt!==''?nt:('Leave account of '+P(T).Sri+' '+(T.name||'')+' (served from '+fmt(p.start,F)+' to '+fmt(pEnd,F)+') verified with reference to Leave Register and other relevant records and found to be correct.'+(mlTaken?' Total M.L. taken = '+mlTaken+' days.':''));
+      rows.push({kind:'lnote', key:nkey, text:txt, posting:p});
+    }
+  });
+  return {rows:rows};
+}
+
+// ---------- word wrap (needs measure fn) ----------
+function wrap(text,width,measure){
+  var out=[]; String(text==null?'':text).split('\n').forEach(function(par){
+    if(par===''){ out.push(''); return; }
+    var lead=(/^\s+/.exec(par)||[''])[0]; var ws=par.trim().split(/\s+/), line=lead;
+    ws.forEach(function(w){ var t=line.trim()===''?lead+w:line+' '+w;
+      if(measure(t)<=width || line.trim()===''){
+        if(measure(t)>width && line.trim()===''){ // break long word
+          var s=lead; for(var i=0;i<w.length;i++){ if(measure(s+w[i])>width && s.trim()!==''){ out.push(s); s=''; } s+=w[i]; } line=s; }
+        else line=t; }
+      else { out.push(line); line=lead+w; } });
+    out.push(line); });
+  return out;
+}
+
+function fullHistory(T,S){ var H1=computeHistory(T,S); var LV1=computeLeave(T,S,H1); var m={}; H1.postings.forEach(function(p){ m[p.id]={ml:p._ml||'',hap:p._hap||'',eol:p._eol||''}; });
+  var H=computeHistory(T,S,m); var LV=computeLeave(T,S,H); return {H:H,LV:LV}; }
+return {fullHistory:fullHistory, pd:pd, ds:ds, addDays:addDays, addYears:addYears, addMonths:addMonths, fmt:fmt, todayStr:todayStr, dobLine:dobLine, words:words, ordinalWords:ordinalWords,
+  superannuation:superannuation, money:money, payDaRows:payDaRows, defaultDA:defaultDA, genCells:genCells, commByName:commByName, defaultCommissions:defaultCommissions, defaultSettings:defaultSettings, mergeSettings:mergeSettings, levelById:levelById,
+  computeHistory:computeHistory, genIncrements:genIncrements, computeLeave:computeLeave, sortEvents:sortEvents, wrap:wrap, P:P, PAYTYPES:PAYTYPES};
+})();
+if(typeof module!=='undefined') module.exports=SB;
+</script>
+<script>// ===== Book page renderer (DOM) =====
+var BOOK=(function(){
+'use strict';
+var PW=794, PH=1123, PAD=40, LH=13, LPR=3, RH=40, FONT='11px "Roboto Condensed", "Arial Narrow", Arial, sans-serif';
+var ctx=null;
+function measure(t){ if(!ctx){ ctx=document.createElement('canvas').getContext('2d'); } ctx.font=FONT; return ctx.measureText(t).width; }
+function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+
+// column widths
+var HL=[170,92,82,120,78,84,88], HR=[130,140,150,150,144];
+var LL=[150,62,62,50,50,62,62,52,58,58,48], LR=[50,50,46,46,46,50,46,46,58,58,46,104,68];
+var HLH=['Name of post with full address of the Institution','Scale of Pay with stages of increment','Whether post is permanent or temporary','Nature of appointment permanent/ temporary/ Officiating Extension','Date of appointment/ increment','Pay and Special Pay, if any','Date of termination of appointment'];
+var HRH=['Reason for termination of appointment (Such as promotion, Pay revision, resignation, dismissal etc.)','Nature and duration of leave taken','Signature of employee','Signature of Head of Institution','Certificate of verification of Service'];
+
+function W(arr,a,b){ var s=0; for(var i=a;i<=b;i++) s+=arr[i]; return s; }
+function inner(w){ return w-6; }
+
+// pair-wrap: text flowing across left width then right width per visual line
+function pairWrap(text,w1,w2){
+  var L=[],R=[]; String(text||'').split('\n').forEach(function(par){
+    var ws=par.trim()?par.trim().split(/\s+/):[]; if(!ws.length){ L.push(''); R.push(''); return; }
+    var i=0; while(i<ws.length){
+      var l=''; while(i<ws.length && (l===''||measure(l+' '+ws[i])<=w1)){ if(l===''&&measure(ws[i])>w1){ l=ws[i]; i++; break; } l=l?l+' '+ws[i]:ws[i]; i++; }
+      var r=''; while(i<ws.length && (r===''||measure(r+' '+ws[i])<=w2)){ if(r===''&&measure(ws[i])>w2){ r=ws[i]; i++; break; } r=r?r+' '+ws[i]:ws[i]; i++; }
+      L.push(l); R.push(r);
+    } });
+  return {L:L,R:R};
+}
+
+// ---- build a layout row: {units, left:[{col,span,lines}], right:[...]}
+function layoutHist(r){
+  var cells={}; for(var c=1;c<=12;c++) cells[c]=r['c'+c]||'';
+  var covered={}, Lc=[], Rc=[];
+  var spans=r.spans||[];
+  spans.forEach(function(s){
+    if(s.from<=7 && s.to>=8){ // cross-page
+      var pw=pairWrap(s.text,inner(W(HL,s.from-1,6)),inner(W(HR,0,s.to-8)));
+      Lc.push({from:s.from,to:7,lines:pw.L,box:r.box,cert:r.cert}); Rc.push({from:8,to:s.to,lines:pw.R,cert:r.cert});
+    } else if(s.to<=7){ Lc.push({from:s.from,to:s.to,lines:SB.wrap(s.text,inner(W(HL,s.from-1,s.to-1)),measure),box:r.box}); }
+    else { Rc.push({from:s.from,to:s.to,lines:SB.wrap(s.text,inner(W(HR,s.from-8,s.to-8)),measure)}); }
+    for(var k=s.from;k<=s.to;k++) covered[k]=1;
+  });
+  if(r._wideR && !covered[9]){ // resignation text spans 9-12
+    Rc.push({from:9,to:12,lines:SB.wrap(cells[9],inner(W(HR,1,4)),measure)}); for(var k2=9;k2<=12;k2++) covered[k2]=1; }
+  for(var c2=1;c2<=12;c2++){ if(covered[c2]) continue;
+    var w=c2<=7?HL[c2-1]:HR[c2-8]; var cell={from:c2,to:c2,lines:cells[c2]?SB.wrap(cells[c2],inner(w),measure):[]};
+    if(c2===6||c2===5||c2===7) cell.nowrapCenter=true;
+    (c2<=7?Lc:Rc).push(cell); }
+  var mx=1; Lc.concat(Rc).forEach(function(x){ if(x.lines.length>mx) mx=x.lines.length; });
+  Lc.sort(function(a,b){return a.from-b.from;}); Rc.sort(function(a,b){return a.from-b.from;});
+  return {units:Math.max(1,Math.ceil(mx/LPR)), L:Lc, R:Rc, src:r};
+}
+
+function paginate(items,cap,carryFn){
+  var pages=[], cur=[], used=0;
+  items.forEach(function(it){
+    if(it.units>cap){ // split long row by lines
+      var parts=splitRow(it,cap); parts.forEach(function(p){ push(p); }); return; }
+    push(it);
+  });
+  function push(it){
+    if(used+it.units>cap){ pages.push(cur); cur=[]; used=0; }
+    if(cur.length===0 && pages.length>0 && carryFn){ var it2=carryFn(it); if(it2){ if(it2.units>cap) it2=it; it=it2; } }
+    cur.push(it); used+=it.units; }
+  if(cur.length) pages.push(cur);
+  if(!pages.length) pages.push([]);
+  return pages;
+}
+function splitRow(it,cap){
+  var per=cap*LPR, total=it.units*LPR, out=[];
+  for(var o=0;o<total;o+=per){
+    var cut=function(arr){ return arr.map(function(c){ var n=Object.assign({},c); n.lines=c.lines.slice(o,o+per); return n; }); };
+    var L=cut(it.L), R=cut(it.R), mx=1; L.concat(R).forEach(function(x){ if(x.lines.length>mx) mx=x.lines.length; });
+    out.push({units:Math.max(1,Math.ceil(mx/LPR)),L:L,R:R,src:it.src});
+  }
+  return out;
+}
+
+function colgroup(ws){ return '<colgroup>'+ws.map(function(w){return '<col style="width:'+w+'px">';}).join('')+'</colgroup>'; }
+function cellsHtml(cells,base,ws,units){
+  return cells.map(function(c){ var span=c.to-c.from+1; var cls='ent'+(c.box?' box':'')+(c.nowrapCenter?' ctr':'');
+    return '<td colspan="'+span+'" class="cl"><div class="'+cls+'" style="height:'+(units*RH-2)+'px">'+esc(c.lines.join('\n'))+'</div></td>'; }).join('');
+}
+function bodyRows(page,side,ws,cap){
+  var h='', used=0;
+  page.forEach(function(it){ h+='<tr style="height:'+(it.units*RH)+'px" class="ru">'+cellsHtml(side==='L'?it.L:it.R,0,ws,it.units)+'</tr>'; used+=it.units; });
+  for(;used<cap;used++){ h+='<tr style="height:'+RH+'px" class="ru">'+ws.map(function(){return '<td class="cl"></td>';}).join('')+'</tr>'; }
+  return h;
+}
+
+// ---------- page builders ----------
+function pageWrap(inner,num,side){ return '<div class="bpage"><div class="pnum '+(side||'r')+'">'+(num!=null?num:'')+'</div>'+inner+'</div>'; }
+
+function particulars(T,S){
+  var F=S.dateFmt; var V=function(s){ return '<span class="val">'+esc(s||'').replace(/\n/g,'<br>')+'</span>'; };
+  var h='<div class="ptitle">SERVICE BOOK</div><div class="psub">PARTICULARS OF THE EMPLOYEE</div><div class="plist">'+
+  '<div class="pl"><span class="lb">1.&nbsp; Name—</span>'+V(T.name)+'</div>'+
+  '<div class="pl"><span class="lb">2.&nbsp; Residence—</span>'+V(T.residence)+'</div>'+
+  '<div class="pl dob"><span class="lb small">3.&nbsp; Date of birth by Christian era— (To be ascertained and entered— in accordance with the instruction contained in rule 11 of Pension Rules, Vide G. O. No. 16-10-Edn. (S) dated 18.7.68.)</span>'+V(SB.dobLine(T.dob,T.dobSource))+'</div>'+
+  '<div class="pl"><span class="lb">4.&nbsp; Educational Qualification—</span>'+V(T.qualEntry)+'</div>'+
+  '<div class="pl ind"><span class="lb">(a)&nbsp; At the time of entry—</span>'+V(T.qualEntry)+'</div>'+
+  '<div class="pl ind"><span class="lb">(b)&nbsp; Subsequent improvement in qualification with date</span>'+V(T.qualLater)+'</div>'+
+  '<div class="pl"><span class="lb">5.&nbsp; Exact height by measurement—</span>'+V(T.height)+'</div>'+
+  '<div class="pl"><span class="lb">6.&nbsp; Personal marks for identification—</span>'+V(T.idMarks)+'</div>'+
+  '<div class="pl"><span class="lb">7.&nbsp; Father\'s/Husband\'s name and residence—</span>'+V(T.father)+'</div>'+
+  '<div class="pl"><span class="lb">*8.&nbsp; Signature of employee—</span></div>'+
+  '<div class="pl"><span class="lb">†9.&nbsp; Signature of the Head of Institution—</span></div></div>'+
+  '<div class="pfoot"><div>* The signature in line 8 should be renewed or reattested at least every five years and signature in lines 8 and 9 should be dated.</div><div>† If the employee is the Head of Institution, the Signature in line 9 should be made by the District Inspector/Inspectress of Schools concerned.</div></div>';
+  return pageWrap(h,S.pages.part,'r');
+}
+function finger(T,S){
+  var rows=['THUMB—','FORE-FINGER—','MIDDLE-FINGER—','RING-FINGER—','LITTLE-FINGER—'].map(function(x){return '<div class="fg"><span class="lb">'+x+'</span></div>';}).join('');
+  var h='<div class="hcenter">SERVICE BOOK</div><div class="fsub">(C) Finger Impression</div><div class="fsub2">Left-hand thumb &amp; Finger impressions of employee</div>'+
+   '<div class="fg"><span class="lb">NAME—</span><span class="val">'+esc(T.name||'')+'</span></div>'+rows;
+  return pageWrap(h,S.pages.finger,'r');
+}
+
+function histPages(T,S,H){
+  var cap=S.lines||20;
+  var items=H.rows.map(layoutHist);
+  var carry=function(it){ var r=it.src; if(!r.posting) return null; var hasC1=it.L.some(function(c){return c.from===1 && c.lines.length;}); if(hasC1) return null;
+    if(it.L.some(function(c){return c.from===1 && c.to>1;})) return null;
+    var r2=Object.assign({},r); r2.c1=r.posting.post+'\n'+r.posting.school; if(!r2.c2 && !(r.spans||[]).some(function(s){return s.from<=2&&s.to>=2;})) r2.c2=r.posting.scale||''; return layoutHist(r2); };
+  var pages=paginate(items,cap,carry), out=[];
+  pages.forEach(function(pg,i){
+    var nL=S.pages.hist+i*2;
+    var thL='<thead><tr>'+HLH.map(function(t){return '<th>'+t+'</th>';}).join('')+'</tr><tr class="num">'+HLH.map(function(t,k){return '<th>('+(k+1)+')</th>';}).join('')+'</tr></thead>';
+    var thR='<thead><tr>'+HRH.map(function(t){return '<th>'+t+'</th>';}).join('')+'</tr><tr class="num">'+HRH.map(function(t,k){return '<th>('+(k+8)+')</th>';}).join('')+'</tr></thead>';
+    out.push(pageWrap('<div class="hrow"><span></span><span class="hc">SERVICE BOOK</span><span class="hbig">(e) HISTORY OF</span></div><table class="bt">'+colgroup(HL)+thL+'<tbody>'+bodyRows(pg,'L',HL,cap)+'</tbody></table>',nL,'l'));
+    out.push(pageWrap('<div class="hrow"><span class="hbig">SERVICE</span><span class="hc">SERVICE BOOK</span><span></span></div><table class="bt">'+colgroup(HR)+thR+'<tbody>'+bodyRows(pg,'R',HR,cap)+'</tbody></table>',nL+1,'r'));
+  });
+  return out;
+}
+
+function leavePages(T,S,H,LV){
+  var cap=S.lines||20, F=S.dateFmt, items=[];
+  // col1 distribution per posting
+  var byPost={}; LV.rows.forEach(function(r){ if(r.kind==='leave'){ var k=r.posting.id; (byPost[k]=byPost[k]||[]).push(r); } });
+  Object.keys(byPost).forEach(function(k){ var rs=byPost[k], p=rs[0].posting;
+    var lines=SB.wrap((T.desigShort||'A.T.')+'\n'+p.school,inner(LL[0]),measure); var i=0;
+    rs.forEach(function(r,ix){ var take=ix===rs.length-1?lines.slice(i):lines.slice(i,i+LPR); i+=take.length; r._c1=take; }); });
+  var lk=['c2a','c2b','c3a','c3b','c4a','c4b','c4c','c5a','c5b','c6'], rk=['c7','c8','c9','c10a','c10b','c11','c12a','c12b','c13','c14','c15','c16','c17'];
+  LV.rows.forEach(function(r){
+    if(r.kind==='leave'){
+      var L=[{from:1,to:1,lines:r._c1||[]}].concat(lk.map(function(k,i){ return {from:i+2,to:i+2,lines:SB.wrap(r[k],inner(LL[i+1]),measure),nowrapCenter:true}; }));
+      var R=rk.map(function(k,i){ return {from:i+1,to:i+1,lines:SB.wrap(r[k],inner(LR[i]),measure),nowrapCenter:true}; });
+      var mx=1; L.concat(R).forEach(function(x){ if(x.lines.length>mx) mx=x.lines.length; });
+      items.push({units:Math.max(1,Math.ceil(mx/LPR)),L:L,R:R,src:r});
+    } else {
+      var pw=pairWrap(r.text,inner(W(LL,0,10)),inner(W(LR,0,12)));
+      items.push({units:Math.max(1,Math.ceil(pw.L.length/LPR)),L:[{from:1,to:11,lines:pw.L,cert:true}],R:[{from:1,to:13,lines:pw.R,cert:true}],src:r});
+    }
+  });
+  var pages=paginate(items,cap,null), out=[];
+  var first=(H.postings[0]||{}).start||'';
+  var thL='<thead><tr><th rowspan="2">Institution served under</th><th colspan="2">Period of duty</th><th colspan="2">Vacation</th><th colspan="3">Leave earned on</th><th colspan="3">Leave at Credit on</th></tr>'+
+    '<tr><th>From</th><th>To</th><th>From</th><th>To</th><th>Average Pay on Medical Certificate</th><th>Half Average Pay</th><th>Vacation Detention</th><th>Average Pay on M.C. [Total of Cols. 13 &amp; 4(a)]</th><th>Half average Pay [Total of Cols. 14 &amp; 4(b)]</th><th>Vacation detention leave [Total of Cols. 15 &amp; 4(c)]</th></tr>'+
+    '<tr class="num"><th>(1)</th><th>2(a)</th><th>2(b)</th><th>3(a)</th><th>3(b)</th><th>4(a)</th><th>4(b)</th><th>4(c)</th><th>5(a)</th><th>5(b)</th><th>(6)</th></tr></thead>';
+  var thR='<thead><tr><th colspan="3">Leave taken</th><th colspan="2">Maternity Leave</th><th rowspan="2">Extra ordinary Leave</th><th colspan="2">Special Leave</th><th colspan="3">Balance (on return from) Leave</th><th rowspan="2">Signature of the Head of Institution</th><th rowspan="2">Remarks</th></tr>'+
+    '<tr><th>On average Pay on M.C.</th><th>On Half average Pay</th><th>Vacation Deten- tion</th><th>Full Pay</th><th>Half Pay</th><th>Full Pay</th><th>Half Pay</th><th>On average Pay on M.C.</th><th>On Half average Pay</th><th>Vacation Deten- tion</th></tr>'+
+    '<tr class="num"><th>(7)</th><th>(8)</th><th>(9)</th><th>10(a)</th><th>10(b)</th><th>(11)</th><th>12(a)</th><th>12(b)</th><th>(13)</th><th>(14)</th><th>(15)</th><th>(16)</th><th>(17)</th></tr></thead>';
+  pages.forEach(function(pg,i){
+    var n=S.pages.leave+i*2;
+    var headL='<div class="hrow"><span></span><span class="hc">SERVICE BOOK</span><span class="hbig">(g) LEAVE</span></div>'+
+      '<div class="lh">Leave Account of <span class="val u">'+esc(T.name||'')+'</span> Designation <span class="val u">'+esc(T.desigShort||'A.T.')+'</span></div>'+
+      '<div class="lh">Date of Commencement of Service <span class="val u">'+esc(SB.fmt(first,F))+'</span></div>';
+    var headR='<div class="hrow"><span class="hbig">ACCOUNT</span><span class="hc">SERVICE BOOK</span><span></span></div>'+
+      '<div class="lh">Date of attaining the age of Superannuation <span class="val u">'+esc(SB.fmt(SB.superannuation(T.dob),F))+'</span></div><div class="lh">&nbsp;</div>';
+    out.push(pageWrap(headL+'<table class="bt lv">'+colgroup(LL)+thL+'<tbody>'+bodyRows(pg,'L',LL,cap)+'</tbody></table>',n,'l'));
+    out.push(pageWrap(headR+'<table class="bt lv">'+colgroup(LR)+thR+'<tbody>'+bodyRows(pg,'R',LR,cap)+'</tbody></table>',n+1,'r'));
+  });
+  return out;
+}
+
+function allPages(T,S){
+  var FH=SB.fullHistory(T,S), H=FH.H;
+  // posting scale for carry
+  (T.events||[]).forEach(function(e){ if(e.type==='join'){ H.postings.forEach(function(p){ if(p.id===e.id){ var L=SB.levelById(S,e.sys); p.scale=e.scale||(L?L.name+'\n'+L.pre:''); } }); } });
+  var LV=FH.LV;
+  return {H:H, LV:LV, pages:[particulars(T,S),finger(T,S)].concat(histPages(T,S,H)).concat(leavePages(T,S,H,LV))};
+}
+
+var CSS=[
+'.bpage{width:794px;height:1123px;background:#fffdf8;position:relative;padding:34px 40px 30px;box-sizing:border-box;font-family:"Noto Serif",Georgia,serif;color:#111;overflow:hidden}',
+'.bpage .pnum{position:absolute;top:14px;font-size:12px}.bpage .pnum.l{left:40px}.bpage .pnum.r{right:40px}',
+'.bpage .val{font-family:"Roboto Condensed","Arial Narrow",Arial,sans-serif;color:#1b3a9a;font-size:15px}',
+'.bpage .val.u{border-bottom:1px dotted #555;padding:0 6px}',
+'.ptitle{text-align:center;font-weight:700;font-size:26px;margin-top:20px}.psub{text-align:center;font-family:Arial,sans-serif;font-weight:700;font-size:16px;margin:6px 0 26px}',
+'.plist .pl{display:flex;gap:14px;align-items:flex-start;min-height:62px;font-size:13px}.plist .pl .lb{flex:0 0 auto;max-width:260px}.plist .pl.dob{min-height:110px}.plist .pl .lb.small{font-size:11px;font-style:italic;max-width:230px}.plist .pl.ind{padding-left:24px}',
+'.plist .pl .val{flex:1;line-height:1.35}',
+'.pfoot{position:absolute;bottom:34px;left:40px;right:40px;font-size:10.5px;border-top:1px solid #333;padding-top:6px;line-height:1.4}',
+'.hcenter{text-align:center;font-weight:700;font-size:15px;margin-top:4px;border-bottom:1px solid #333;padding-bottom:6px}.fsub{text-align:center;font-family:Arial,sans-serif;font-weight:700;font-size:13px;margin-top:8px}.fsub2{text-align:center;font-family:Arial,sans-serif;font-weight:700;font-size:13px;margin:12px 0 30px}',
+'.fg{border-bottom:1px solid #333;height:150px;display:flex;align-items:center;gap:20px;font-size:13px}.fg:first-of-type{height:90px}',
+'.hrow{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:6px}.hrow .hc{font-weight:700;font-size:13px}.hrow .hbig{font-family:Arial,sans-serif;font-size:22px;letter-spacing:1px}.hrow span{flex:1}.hrow .hc{text-align:center}.hrow span:last-child{text-align:right}',
+'.lh{font-family:Arial,sans-serif;font-weight:700;font-size:12.5px;margin:3px 0}',
+'table.bt{border-collapse:collapse;table-layout:fixed;width:714px}',
+'table.bt th{border:1px solid #222;font-family:Arial,sans-serif;font-weight:400;font-size:9px;line-height:1.15;padding:3px 2px;vertical-align:middle;text-align:center;height:120px}',
+'table.bt.lv th{height:auto;font-size:8.5px}table.bt tr.num th{height:16px;font-size:9px}',
+'table.bt td.cl{border-left:1px solid #222;border-right:1px solid #222;padding:0;vertical-align:top}',
+'table.bt tr.ru{background-image:repeating-linear-gradient(to bottom,transparent 0,transparent '+(RH-1)+'px,#9a9a9a '+(RH-1)+'px,#9a9a9a '+RH+'px)}',
+'table.bt tbody tr:last-child td{border-bottom:1px solid #222}',
+'.ent{font-family:"Roboto Condensed","Arial Narrow",Arial,sans-serif;font-size:11px;line-height:'+LH+'px;color:#1b3a9a;white-space:pre;padding:1px 3px 0;overflow:hidden}',
+'.ent.ctr{text-align:center}.ent.box{font-weight:700}'
+].join('\n');
+
+return {allPages:allPages, CSS:CSS, PW:PW, PH:PH, measure:measure};
+})();
+</script>
+<script>// ===== Offline document reader: PDF text layer + Tesseract OCR (no AI) =====
+var READER=(function(){
+'use strict';
+function abs(p){ return new URL(p, location.href).href; }
+function loadScript(src){ return new Promise(function(ok,no){ var s=document.createElement('script'); s.src=src; s.onload=ok; s.onerror=function(){ no(new Error('লাইব্রেরি লোড হয়নি: '+src)); }; document.head.appendChild(s); }); }
+var pdfReady=null, ocrWorker=null;
+// tesseract's worker reads language data from IndexedDB (idb-keyval: db 'keyval-store', store 'keyval')
+function idbPut(key,val){ return new Promise(function(ok,no){ try{ var rq=indexedDB.open('keyval-store',1);
+  rq.onupgradeneeded=function(){ rq.result.createObjectStore('keyval'); };
+  rq.onerror=function(){ no(new Error('এই ব্রাউজারে স্টোরেজ চালু নেই, তাই ছবি থেকে লেখা চেনা যাচ্ছে না')); };
+  rq.onsuccess=function(){ var db=rq.result; var tx=db.transaction('keyval','readwrite'); tx.objectStore('keyval').put(val,key); tx.oncomplete=function(){ db.close(); ok(); }; tx.onerror=function(){ no(tx.error); }; };
+ }catch(e){ no(new Error('এই ব্রাউজারে স্টোরেজ চালু নেই, তাই ছবি থেকে লেখা চেনা যাচ্ছে না')); } }); }
+function ensurePdf(){ if(!pdfReady) pdfReady=loadScript(abs('vendor/pdf.min.js')).then(function(){ window.pdfjsLib.GlobalWorkerOptions.workerSrc=abs('vendor/pdf.worker.min.js'); }); return pdfReady; }
+function ensureOcr(progress){
+  if(ocrWorker) return Promise.resolve(ocrWorker);
+  return (window.Tesseract?Promise.resolve():loadScript(abs('vendor/tesseract.min.js'))).then(function(){
+    progress&&progress('লেখা চেনার ফাইল লোড হচ্ছে (প্রথমবার)…');
+    return fetch(abs('vendor/lang/eng.traineddata.txt')).then(function(r){ if(!r.ok) throw new Error('ভাষার ফাইল পাওয়া যায়নি'); return r.text(); }).then(function(b64){
+      var bin=atob(b64.trim()), u=new Uint8Array(bin.length); for(var i=0;i<bin.length;i++) u[i]=bin.charCodeAt(i);
+      return idbPut('./eng.traineddata',u); }).then(function(){
+      return window.Tesseract.createWorker('eng',1,{workerPath:abs('vendor/worker.min.js'), corePath:abs('vendor/core'), langPath:abs('vendor/lang'), workerBlobURL:false, cacheMethod:'readOnly',
+      logger:function(m){ if(progress && m && m.status) progress('OCR: '+m.status+(m.progress?' '+Math.round(m.progress*100)+'%':'')); }}); });
+  }).then(function(w){ ocrWorker=w; return w; });
+}
+
+// items: {t,x,y,w,h,page}
+function fromPdf(file,progress){
+  return ensurePdf().then(function(){ return file.arrayBuffer(); }).then(function(buf){
+    return window.pdfjsLib.getDocument({data:buf}).promise; }).then(function(pdf){
+    var out={pages:[], scanned:[]}; var i=0;
+    function next(){ i++; if(i>pdf.numPages) return out; progress&&progress('পাতা '+i+'/'+pdf.numPages+' পড়ছি…');
+      return pdf.getPage(i).then(function(pg){ var vp=pg.getViewport({scale:1});
+        return pg.getTextContent().then(function(tc){
+          var items=tc.items.filter(function(it){return it.str&&it.str.trim();}).map(function(it){ return {t:it.str, x:it.transform[4], y:vp.height-it.transform[5], w:it.width, h:Math.abs(it.transform[3])||10, page:i}; });
+          var chars=items.reduce(function(s,a){return s+a.t.trim().length;},0);
+          if(chars>40){ out.pages.push({page:i, items:items, src:'text'}); return next(); }
+          // scanned page -> render & OCR
+          var sc=2.2, v2=pg.getViewport({scale:sc}), cv=document.createElement('canvas'); cv.width=v2.width; cv.height=v2.height;
+          return pg.render({canvasContext:cv.getContext('2d'), viewport:v2}).promise.then(function(){ return ocrCanvas(cv,i,progress); }).then(function(p){ p.items.forEach(function(it){ it.x/=sc; it.y/=sc; it.w/=sc; it.h/=sc; }); out.pages.push(p); out.scanned.push(i); return next(); });
+        }); }); }
+    return next(); });
+}
+function ocrCanvas(src,page,progress){
+  return ensureOcr(progress).then(function(w){ progress&&progress('পাতা '+page+': লেখা চিনছি (OCR)…'); return w.recognize(src); }).then(function(r){
+    var items=[]; (r.data.lines||[]).forEach(function(l){ (l.words||[]).forEach(function(wd){ if(wd.confidence<35) return; items.push({t:wd.text, x:wd.bbox.x0, y:wd.bbox.y1, w:wd.bbox.x1-wd.bbox.x0, h:wd.bbox.y1-wd.bbox.y0, page:page, conf:wd.confidence}); }); });
+    return {page:page, items:items, src:'ocr', conf:r.data.confidence};
+  });
+}
+function fromImage(file,progress){
+  return new Promise(function(ok,no){ var img=new Image(); img.onload=function(){ var cv=document.createElement('canvas'); var s=Math.min(1,2600/Math.max(img.width,img.height)); cv.width=img.width*s; cv.height=img.height*s; cv.getContext('2d').drawImage(img,0,0,cv.width,cv.height); ok(cv); }; img.onerror=function(){ no(new Error('ছবি খোলা যায়নি')); }; img.src=URL.createObjectURL(file); })
+  .then(function(cv){ return ocrCanvas(cv,1,progress); }).then(function(p){ return {pages:[p], scanned:[1]}; });
+}
+function read(file,progress){ return /pdf$/i.test(file.type)||/\.pdf$/i.test(file.name) ? fromPdf(file,progress) : fromImage(file,progress); }
+
+// ---------- lines ----------
+function toLines(doc){
+  var lines=[];
+  doc.pages.forEach(function(p){
+    var its=p.items.slice().sort(function(a,b){ return a.y-b.y || a.x-b.x; }), cur=null;
+    its.forEach(function(it){ var tol=Math.max(4,(it.h||10)*0.55);
+      if(cur && Math.abs(it.y-cur.y)<=tol){ cur.items.push(it); } else { cur={y:it.y,items:[it],page:p.page}; lines.push(cur); } });
+  });
+  lines.forEach(function(l){ l.items.sort(function(a,b){return a.x-b.x;}); l.text=l.items.map(function(i){return i.t;}).join(' ').replace(/\s+/g,' ').trim(); });
+  return lines.filter(function(l){return l.text;});
+}
+
+// ---------- parsing helpers ----------
+var MON={jan:1,feb:2,mar:3,apr:4,may:5,jun:6,jul:7,aug:8,sep:9,oct:10,nov:11,dec:12};
+function y4(y){ y=+y; if(y<100) y+= (y<50?2000:1900); return y; }
+function iso(y,m,d){ y=y4(y); m=+m; d=+d; if(m<1||m>12||d<1||d>31||y<1950||y>2070) return null; return y+'-'+(m<10?'0':'')+m+'-'+(d<10?'0':'')+d; }
+var RX_DATE=/\b(\d{1,2})\s*[.\-\/]\s*(\d{1,2})\s*[.\-\/]\s*(\d{4}|\d{2})\b|\b(\d{1,2})(?:st|nd|rd|th)?\s+(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*[,.]?\s+(\d{4})\b/gi;
+function dates(s){ var out=[], m; RX_DATE.lastIndex=0; while((m=RX_DATE.exec(s))){ var d= m[1]? iso(m[3],m[2],m[1]) : iso(m[6],MON[m[5].toLowerCase().slice(0,3)],m[4]); if(d) out.push({iso:d, raw:m[0], at:m.index}); } return out; }
+function amounts(s){ var out=[], m, re=/(?:Rs\.?\s*)?\b(\d{1,3}(?:,\d{2,3})+|\d{4,6})(?:\s*\/-)?/g;
+  while((m=re.exec(s))){ var raw=m[0], n=+m[1].replace(/,/g,''); var before=s.slice(Math.max(0,m.index-3),m.index);
+    if(/[.\-\/]\s*$/.test(before) || /^\d{1,2}\s*[.\-\/]/.test(s.slice(m.index+m[0].length)) ) continue; // part of date
+    if(n>=1950 && n<=2070 && !/Rs|,|\/-/.test(raw)) continue; // looks like a year
+    if(n<1000) continue; out.push({n:n, raw:raw}); }
+  return out; }
+function kind(s){ s=s.toLowerCase();
+  if(/ropa|revision|fixation|fixed/.test(s)) return 'fix';
+  if(/10\s*y|ten year|cas\b|career advancement|benefit/.test(s)) return 'benefit';
+  if(/increment|incr\b/.test(s)) return 'inc';
+  if(/join|appoint/.test(s)) return 'join';
+  if(/release|transfer|utsashree/.test(s)) return 'release';
+  if(/resign/.test(s)) return 'resign';
+  return 'inc'; }
+
+function parse(doc){
+  var lines=toLines(doc), all=lines.map(function(l){return l.text;}).join('\n');
+  var R={lines:lines, text:all, info:{}, pays:[], refs:[], factor:null, levels:[], scanned:doc.scanned||[], conf:null};
+  var confs=doc.pages.filter(function(p){return p.conf!=null;}).map(function(p){return p.conf;}); if(confs.length) R.conf=Math.round(confs.reduce(function(a,b){return a+b;},0)/confs.length);
+  lines.forEach(function(l,ix){ var t=l.text, low=t.toLowerCase();
+    var mName=/\bname\b[^A-Za-z]{0,6}([A-Z][A-Za-z.]+(?:\s+[A-Z][A-Za-z.]+){1,4})/.exec(t); if(mName && !R.info.name && !/father|husband|school|institution|post/i.test(t.slice(0,mName.index))) R.info.name=mName[1].trim();
+    if(/birth/i.test(t)){ var dd=dates(t); if(dd.length && !R.info.dob) R.info.dob=dd[0].iso; }
+    var mF=/father'?s?(?:\/husband'?s?)?\s*name[^A-Za-z]{0,8}([A-Z][A-Za-z.]+(?:\s+[A-Z][A-Za-z.]+){0,4})/i.exec(t); if(mF && !R.info.father) R.info.father=mF[1].trim();
+    var mH=/height[^0-9]{0,20}(\d{2,3}\s*(?:c\.?\s*m|cm))/i.exec(t); if(mH && !R.info.height) R.info.height=mH[1].replace(/\s+/g,' ').toUpperCase();
+    // pay rows: a line with a date and an amount
+    var ds=dates(t), am=amounts(t);
+    if(ds.length && am.length){ R.pays.push({date:ds[0].iso, end:ds[1]?ds[1].iso:'', pay:am[am.length-1].n, kind:kind(t), line:t, page:l.page}); }
+    // references
+    var re=/\b(G\.?\s*O\.?|Memo\.?|Notification|Resolution)\s*(?:No\.?)?\s*[:\-]?\s*([A-Za-z0-9()\/\-.&]+(?:\s*\([A-Za-z0-9]+\))?(?:[\/\-][A-Za-z0-9()\/\-.&]+)*)[^\n]{0,40}?(?:dt\.?|dated|date)\s*[:\-]?\s*(\d{1,2}\s*[.\-\/]\s*\d{1,2}\s*[.\-\/]\s*\d{2,4}|\d{1,2}(?:st|nd|rd|th)?\s+[A-Za-z]+,?\s+\d{4})/gi, m;
+    while((m=re.exec(t))){ var dd2=dates(m[3]); R.refs.push({kind:m[1].replace(/\s/g,''), no:m[2], date:dd2.length?dd2[0].iso:'', text:(m[1].replace(/\s+/g,'')+' No. '+m[2]+' dt. '+m[3]).replace(/\s+/g,' ')}); }
+    if(!/(G\.?\s*O\.?|Memo|Notification|Resolution)\s*(No)?/i.test(t)){ var mno=/\bNo\.?\s*[:\-]?\s*([A-Za-z0-9()\/\-.&]*\d[A-Za-z0-9()\/\-.&]*)\s*,?\s*(?:dt\.?|dated|date)\s*[:\-]?\s*(\d{1,2}\s*[.\-\/]\s*\d{1,2}\s*[.\-\/]\s*\d{2,4})/i.exec(t);
+      if(mno){ var dd3=dates(mno[2]); R.refs.push({kind:'No', no:mno[1], date:dd3.length?dd3[0].iso:'', text:(mno[1]+' dt. '+mno[2]).replace(/\s+/g,' ')}); } }
+    var mfac=/(?:factor|multipl\w*)\D{0,25}?(\d\.\d{1,3})\b/i.exec(t); if(mfac && !R.factor) R.factor=+mfac[1];
+  });
+  // de-duplicate pays by date
+  var seen={}; R.pays=R.pays.filter(function(p){ var k=p.date+'|'+p.pay; if(seen[k]) return false; seen[k]=1; return true; });
+  R.levels=matrixCols(doc);
+  return R;
+}
+// pay-matrix columns: numeric items grouped by x, increasing ~2-6% down the column
+function matrixCols(doc){
+  var out=[];
+  doc.pages.forEach(function(p){
+    var nums=p.items.map(function(it){ var s=it.t.replace(/[,\s]/g,''); return /^\d{4,6}$/.test(s)?{n:+s,x:it.x+it.w/2,y:it.y}:null; }).filter(Boolean).filter(function(o){return o.n>=5000&&o.n<=400000;});
+    var cols=[]; nums.forEach(function(o){ var c=null; for(var i=0;i<cols.length;i++) if(Math.abs(cols[i].x-o.x)<14){ c=cols[i]; break; } if(!c){ c={x:o.x,v:[]}; cols.push(c); } c.v.push(o); });
+    cols.forEach(function(c){ c.v.sort(function(a,b){return a.y-b.y;}); var seq=[]; c.v.forEach(function(o){ var last=seq[seq.length-1]; if(!last || (o.n/last>1.015 && o.n/last<1.07)) seq.push(o.n); else if(seq.length<5) seq=[o.n]; });
+      if(seq.length>=5){ var nm='', best=1e9; var top=c.v[0].y; p.items.forEach(function(it){ var m=/Level\s*[-:]?\s*(\d{1,2}[A-Z]?)/i.exec(it.t); if(m && it.y<top){ var dx=Math.abs(it.x+it.w/2-c.x), dy=top-it.y; if(dx<60 && dx+dy<best){ best=dx+dy; nm='Level '+m[1]; } } });
+        out.push({page:p.page, cells:seq, name:nm}); } });
+  });
+  return out;
+}
+return {read:read, parse:parse, dates:dates, amounts:amounts, toLines:toLines};
+})();
+</script>
+<script>// ===== App UI =====
+(function(){
+'use strict';
+var $=function(s,r){return (r||document).querySelector(s);};
+function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+function uid(){ return 'x'+Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
+var BN='০১২৩৪৫৬৭৮৯';
+
+var STANDALONE=!!window.SB_STANDALONE;
+var A={db:null, dl:null, mode:'loading', S:SB.defaultSettings(), T:{}, view:'home', tid:null, tab:'info', saveTimers:{}, saving:{}, again:{}};
+
+// ---------- storage ----------
+function lsGet(){ try{ return JSON.parse(localStorage.getItem('sbk_v1')||'null'); }catch(e){ return null; } }
+function lsPut(){ try{ localStorage.setItem('sbk_v1',JSON.stringify({S:A.S,T:A.T})); }catch(e){} }
+function scheduleSave(kind,id){
+  var key=kind+':'+(id||''); clearTimeout(A.saveTimers[key]);
+  A.saveTimers[key]=setTimeout(function(){ doSave(kind,id); },700); setStatus('সেভ হচ্ছে…');
+}
+function doSave(kind,id){
+  var key=kind+':'+(id||'');
+  if(A.mode!=='db'){ lsPut(); setStatus(A.mode==='local'?'এই ফোনে সেভ হয়েছে':'সেভ হয়েছে'); return; }
+  if(A.saving[key]){ A.again[key]=true; return; }
+  A.saving[key]=true;
+  var p = kind==='S' ? A.db.doc('config/settings').set({json:JSON.stringify(A.S)})
+        : kind==='del' ? A.db.doc('teachers/'+id).delete()
+        : A.db.doc('teachers/'+id).set({json:JSON.stringify(A.T[id],function(k,v){return k.charAt(0)==='_'?undefined:v;}), name:A.T[id].name||'', updated:Date.now()});
+  p.then(function(){ setStatus('সেভ হয়েছে ✓'); }).catch(function(e){ setStatus('সেভ হয়নি: '+(e&&e.code||e)); })
+   .then(function(){ A.saving[key]=false; if(A.again[key]){ A.again[key]=false; doSave(kind,id); } });
+}
+function setStatus(t){ var el=$('#status'); if(el) el.textContent=t; }
+
+function init(){
+  render();
+  var timer=setTimeout(function(){ if(A.mode==='loading') fallbackLocal('অনলাইন স্টোরেজ পাওয়া যায়নি'); },10000);
+  if(!window.claude || !window.claude.use){ clearTimeout(timer); fallbackLocal(''); return; }
+  window.claude.use('downloads').then(function(d){ A.dl=d; render(); }).catch(function(){});
+  window.claude.use('db').then(function(db){
+    if(!db){ clearTimeout(timer); fallbackLocal('অনলাইন স্টোরেজ পাওয়া যায়নি'); return; }
+    A.db=db; A.mode='db';
+    var gotS=false, gotT=false; function ready(){ if(gotS&&gotT){ clearTimeout(timer); render(); } }
+    db.doc('config/settings').onSnapshot(function(s){ if(s.exists){ try{ A.S=SB.mergeSettings(JSON.parse(s.data().json)); }catch(e){} } gotS=true; ready(); if(gotT && !s.metadata.hasPendingWrites) softRender(); },
+      function(e){ gotS=true; ready(); });
+    db.collection('teachers').onSnapshot(function(q){
+      q.docs.forEach(function(d){ if(A.saving['T:'+d.id]||A.saveTimers['T:'+d.id+'_busy']) return; try{ var t=JSON.parse(d.data().json); t.id=d.id; if(!A.T[d.id] || !d.metadata.hasPendingWrites) A.T[d.id]=t; }catch(e){} });
+      var ids={}; q.docs.forEach(function(d){ ids[d.id]=1; }); Object.keys(A.T).forEach(function(k){ if(!ids[k] && !A.saving['T:'+k] && !pendingNew[k]) delete A.T[k]; });
+      gotT=true; ready(); if(gotS) softRender();
+    }, function(e){ gotT=true; ready(); });
+  }).catch(function(){ clearTimeout(timer); fallbackLocal(''); });
+}
+var pendingNew={};
+function fallbackLocal(msg){ A.mode='local'; var d=lsGet(); if(d){ A.S=SB.mergeSettings(d.S); A.T=d.T||{}; } A.localMsg=msg; render(); }
+// re-render only list-ish views (don't disturb a form being typed)
+function softRender(){ if(A.view==='home' || (A.view==='teacher' && (A.tab==='pages'))) render(); }
+
+// ---------- render root ----------
+function render(){
+  var root=$('#app'); var h='';
+  h+='<header class="top"><div class="tl">'+(A.view!=='home'?'<button class="ib" data-act="home">←</button>':'')+'<b>'+(STANDALONE?'শিক্ষকদের সার্ভিস বুক তৈরি করার অ্যাপ':'সার্ভিস বুক')+'</b>'+(A.S.schoolName?'<span class="sch">'+esc(A.S.schoolName)+'</span>':'')+'</div><span id="status" class="st"></span></header>';
+  if(A.mode==='loading'){ root.innerHTML=h+'<div class="pad muted">লোড হচ্ছে…</div>'; return; }
+  if(A.mode==='local' && !STANDALONE) h+='<div class="warn">ডেটা শুধু এই ফোন/ব্রাউজারে সেভ থাকছে, অন্য ডিভাইসে দেখা যাবে না। '+esc(A.localMsg||'')+'</div>';
+  if(A.updateReady) h+='<div class="warn">নতুন আপডেট এসেছে। <button class="btn sm2" data-act="reloadApp">এখনই চালু করুন</button></div>';
+  if(A.view==='home') h+=homeView();
+  else if(A.view==='settings') h+=settingsView();
+  else if(A.view==='teacher') h+=teacherView();
+  root.innerHTML=h;
+  if(A.view==='teacher' && A.tab==='pages') drawPages();
+}
+
+// ---------- home ----------
+function homeView(){
+  var ids=Object.keys(A.T).sort(function(a,b){ return (A.T[a].name||'').localeCompare(A.T[b].name||''); });
+  var h='<div class="pad"><div class="row gap"><button class="btn pri" data-act="newT">+ নতুন শিক্ষক</button><button class="btn" data-act="settings">⚙ সেটিংস ও পে-ম্যাট্রিক্স</button></div>'+
+    '<div class="row gap wrap" style="margin-top:8px"><button class="btn sm2" data-act="backup">⬇ ব্যাকআপ ফাইল নামাও</button><button class="btn sm2" data-act="restore">⬆ ব্যাকআপ থেকে ফেরত আনো</button></div>'+
+    (STANDALONE?'<div class="muted sm">সব তথ্য শুধু এই '+(/Android|iPhone|iPad/i.test(navigator.userAgent)?'ফোনে':'যন্ত্রে')+' সেভ থাকে, কোথাও পাঠানো হয় না। ফোন হারালে বা বদলালে তথ্য যাতে না হারায়, মাঝে মাঝে ব্যাকআপ ফাইল নামিয়ে রাখুন।'+(A.lastBackup?' শেষ ব্যাকআপ: '+esc(A.lastBackup):'')+'</div>':'');
+  if(!ids.length) h+='<div class="empty">এখনও কোনো শিক্ষক যোগ করা হয়নি। “+ নতুন শিক্ষক” টিপে শুরু করুন।</div>';
+  ids.forEach(function(id){ var T=A.T[id]; var H=SB.computeHistory(T,A.S); var last=H.postings[H.postings.length-1];
+    h+='<div class="card tcard" data-act="openT" data-id="'+id+'"><div class="tn">'+esc(T.name||'(নাম নেই)')+'</div><div class="muted sm">'+esc(last?last.school.split('\n')[0]:'কোনো স্কুল যোগ হয়নি')+'</div>'+
+      '<div class="sm">বর্তমান বেতন: <b>'+(H.finalPay!=null?SB.money(H.finalPay):'—')+'</b>'+(H.flags.length?' <span class="flag">⚠ '+H.flags.length+'টি অমিল</span>':'')+'</div></div>'; });
+  return h+'</div>';
+}
+
+// ---------- teacher ----------
+var TABS=[['info','১. ব্যক্তিগত তথ্য'],['events','২. চাকরির ঘটনা'],['leave','৩. ছুটির হিসাব'],['pages','৪. বইয়ের পাতা'],['da','৫. বেতন ও DA']];
+function teacherView(){
+  var T=A.T[A.tid]; if(!T){ A.view='home'; return homeView(); }
+  var h='<div class="tabs">'+TABS.map(function(t){ return '<button class="tab'+(A.tab===t[0]?' on':'')+'" data-act="tab" data-tab="'+t[0]+'">'+t[1]+'</button>'; }).join('')+'</div><div class="pad">';
+  if(A.tab==='info') h+=infoForm(T); else if(A.tab==='events') h+=eventsView(T); else if(A.tab==='leave') h+=leaveView(T); else if(A.tab==='da') h+=daView(T); else h+=pagesView(T);
+  return h+'</div>';
+}
+function fld(lbl,key,val,type,hint,extra){
+  var inp = type==='textarea' ? '<textarea data-k="'+key+'" rows="3">'+esc(val)+'</textarea>'
+    : type==='select' ? '<select data-k="'+key+'">'+extra.map(function(o){ return '<option value="'+esc(o[0])+'"'+(String(val||'')===String(o[0])?' selected':'')+'>'+esc(o[1])+'</option>'; }).join('')+'</select>'
+    : '<input data-k="'+key+'" type="'+(type||'text')+'" value="'+esc(val)+'"'+(type==='number'?' inputmode="numeric"':'')+'>';
+  return '<label class="f"><span>'+lbl+'</span>'+inp+(hint?'<small>'+hint+'</small>':'')+'</label>';
+}
+function infoForm(T){
+  return '<div class="form" data-form="info">'+
+  fld('নাম (ইংরেজিতে, বইয়ে যেমন লিখবেন)','name',T.name)+
+  fld('লিঙ্গ','sex',T.sex||'M','select','বয়ানে He/She, Sri/Smt. ঠিক করার জন্য',[['M','পুরুষ (Sri, He)'],['F','মহিলা (Smt., She)']])+
+  fld('পদের সংক্ষিপ্ত নাম','desigShort',T.desigShort||'A.T.','text','যেমন A.T. — ছুটির পাতায় ও সার্টিফিকেটে বসবে')+
+  fld('ঠিকানা (Residence)','residence',T.residence,'textarea')+
+  fld('জন্ম তারিখ','dob',T.dob,'date','কথায় লেখাটা অ্যাপ নিজে তৈরি করবে')+
+  fld('জন্ম তারিখের সার্টিফিকেট কে দিয়েছে','dobSource',T.dobSource||'West Bengal Board of Secondary Education')+
+  fld('যোগদানের সময় যোগ্যতা','qualEntry',T.qualEntry)+
+  fld('পরে বাড়ানো যোগ্যতা (তারিখসহ)','qualLater',T.qualLater,'textarea')+
+  fld('উচ্চতা','height',T.height)+
+  fld('শনাক্তকরণ চিহ্ন','idMarks',T.idMarks)+
+  fld('বাবা/স্বামীর নাম ও ঠিকানা','father',T.father,'textarea')+
+  '<div class="prev"><b>জন্ম তারিখের বয়ান:</b><pre>'+esc(SB.dobLine(T.dob,T.dobSource))+'</pre><b>অবসরের তারিখ:</b> '+esc(SB.fmt(SB.superannuation(T.dob),A.S.dateFmt))+'</div>'+
+  '<button class="btn danger sm2" data-act="delT">এই শিক্ষককে মুছে ফেলুন</button></div>';
+}
+
+// ----- events -----
+var ETYPES=[
+ ['join','স্কুলে যোগদান (প্রথম বা নতুন স্কুল)'],['inc','ইনক্রিমেন্ট'],['fix','পে-রিভিশন / ফিক্সেশন (ROPA-2019 বা নতুন পে কমিশন)'],['fix2009','ROPA 2009 ফিক্সেশন'],
+ ['benefit','১০ বছর / CAS সুবিধা'],['payrow','অন্য বেতনের সারি (যেমন Actual benefit)'],['status','পদ/চাকরি স্থায়ী (Permanent) হওয়া'],
+ ['resign','পদত্যাগ (Resignation)'],['release','রিলিজ / বদলি (Utsashree ইত্যাদি)'],['verify','ভেরিফিকেশন সার্টিফিকেট'],['note','নিজের লেখা নোট']];
+function tname(t){ for(var i=0;i<ETYPES.length;i++) if(ETYPES[i][0]===t) return ETYPES[i][1]; return t; }
+function commOpts(){ return (A.S.commissions||[]).map(function(c){ return [c.name,c.name]; }); }
+function applyComm(e){ var C=SB.commByName(A.S,e.commission); if(!C) return; e.method=C.method; e.factor=C.factor===''?'':String(C.factor); e.date=C.date||e.date; e.actualFrom=C.actualFrom||''; e.go=C.go||''; if(C.date){ var y=+C.date.slice(0,4); e.nextInc=y+'-07-01'; }
+  if(C.method==='matrix'){ var lv=A.S.levels.filter(function(L){return L.commission===C.name;}); if(lv.length && !lv.some(function(L){return L.id===e.level;})) e.level=lv[0].id; } }
+function levelOpts(){ return A.S.levels.map(function(L){ return [L.id, L.name+' — '+L.commission]; }); }
+function schema(type){
+  var S=A.S, lt=['leaveText','ছুটির কলম (9)','text','খালি রাখলে: '+S.leaveTextDefault];
+  var payOv=['pay','বইয়ে লেখা বেতন (না থাকলে খালি রাখুন)','number','খালি রাখলে অ্যাপ নিজে হিসাব করবে। আলাদা লিখলে অমিল দেখাবে।'];
+  var follow=['follow','পরের হিসাব কোন সংখ্যা থেকে চলবে','select','',[['','বইয়ের সংখ্যা থেকে'],['false','অ্যাপের হিসাব থেকে (বইয়ের সংখ্যা ভুল মনে হলে)']]];
+  var end=['end','শেষ তারিখ (7) নিজে দিতে চাইলে','date','সাধারণত খালি রাখুন — পরের সারি দেখে অ্যাপ বসাবে'];
+  switch(type){
+   case 'join': return [['date','যোগদানের তারিখ','date'],['post','পদ','text','যেমন Assistant Teacher'],['school','স্কুলের নাম ও পুরো ঠিকানা','textarea'],
+     ['recog','স্কুলের স্বীকৃতির ইতিহাস (কলম 1-এর নিচে)','textarea','প্রতি লাইনে একটা'],['scale','বেতনক্রম (কলম 2)','textarea','যেমন PB-4 (Rs. 9000-40500) + GP Rs. 4800'],
+     ['sys','বেতনের হিসাব কোন নিয়মে','select','',[['2009','ROPA 2009 (মোট বেতনের 3%, 10-এ রাউন্ড)'],['manual','নিজে বসাব (পুরনো স্কেল)']].concat(levelOpts())],
+     ['pay','যোগদানের বেতন','number','নতুন স্কুলে খালি রাখলে আগের স্কুলের শেষ বেতন (LPC) বসবে'],
+     ['postStatus','পদ (3)','select','',[['Temporary','Temporary'],['Permanent','Permanent']]],['apptStatus','নিয়োগের ধরন (4)','select','',[['Temporary','Temporary'],['Permanent','Permanent'],['Officiating','Officiating']]],
+     ['through','কার মাধ্যমে নিয়োগ','text','যেমন WBRSSC / M.C.'],['apptMemo','সুপারিশ/নিয়োগ মেমো নম্বর'],['apptDate','মেমোর তারিখ','date'],
+     ['mcRes','M.C. রেজোলিউশন নম্বর'],['mcDate','রেজোলিউশনের তারিখ','date'],
+     ['approvedBy','অনুমোদন কে দিয়েছেন','text','যেমন D.I. of Schools (SE), Purulia'],['approvalMemo','অনুমোদন মেমো নম্বর'],['approvalDate','অনুমোদনের তারিখ','date'],['approvalWef','কোন তারিখ থেকে (w.e.f.)','date'],
+     ['sanction','পদ মঞ্জুরির তথ্য','text','যেমন Date and No. of sanctioning of the post ...'],['extra','আরও লাইন (কলম 3–7)','textarea','প্রতি লাইনে একটা — নম্বর দিয়ে বসবে'],['noIncNote','নিচে আলাদা নোট (কলম 5–7)','textarea'],end];
+   case 'inc': return [['date','তারিখ','date'],payOv,follow,['notional','নোশনাল?','select','',[['','নিজে বুঝে নাও'],['yes','হ্যাঁ'],['no','না']]],['reason','কলম 8 নিজে লিখতে চাইলে','text','খালি রাখলে: '+S.incLabel],lt,end];
+   case 'benefit': return [['date','তারিখ','date'],['level','নতুন লেভেলে গেলে (না গেলে খালি)','select','খালি থাকলে একই লেভেলে একঘর উপরে',[['','একই লেভেল']].concat(levelOpts())],payOv,follow,['reason','কলম 8','text'],lt,end];
+   case 'payrow': return [['date','তারিখ','date'],payOv,follow,['reason','কলম 8','text','যেমন Actual benefit'],lt,end];
+   case 'fix': return [['commission','কোন পে কমিশন','select','বাছলে গুণক, তারিখ, G.O. নিজে বসবে',commOpts()],['method','ফিক্সেশনের পদ্ধতি','select','',[['matrix','গুণ করে পে-ম্যাট্রিক্সের পরের ঘর (ROPA-2019 ধাঁচ)'],['band','গুণ করে ১০-এ রাউন্ড + গ্রেড পে (ROPA-2009 ধাঁচ)'],['manual','নিজে বেতন বসাব']]],
+     ['date','নোশনাল ফিক্সেশনের তারিখ','date'],['factor','গুণক (fitment factor)','text'],
+     ['level','লেভেল (ম্যাট্রিক্স পদ্ধতিতে)','select','',levelOpts()],['gp','গ্রেড পে (ব্যান্ড পদ্ধতিতে)','number'],['bandText','পে-ব্যান্ড (ব্যান্ড পদ্ধতিতে)','text','যেমন PB-4 (Rs. 9000-40500)'],
+     ['preText','আগের স্কেল (খালি রাখলে লেভেলের তথ্য)','text'],['go','G.O. নম্বর ও তারিখ','text'],['actualFrom','আসল টাকা কবে থেকে','date'],['nextInc','পরের ইনক্রিমেন্টের তারিখ','date'],
+     payOv,follow,['reason','কলম 8','text'],lt,['text','পুরো ফিক্সেশন নোট নিজে লিখতে চাইলে','textarea'],end];
+   case 'fix2009': return [['date','কোন জায়গায় বসবে (তারিখ অনুযায়ী ক্রম)','date','সাধারণত G.O.-র তারিখ'],['showDate','কলম 5-এ যে তারিখ দেখাবে','date'],['pay','ফিক্স হওয়া বেতন','number'],['wef','কবে থেকে (w.e.f.)','date'],
+     ['scaleText','পে-ব্যান্ড ও গ্রেড পে','text'],['go','G.O.','text'],['reason','কলম 8','text'],lt,['extra','নিচের ছোট নোট (কলম 5–7)','textarea'],['text','পুরো নোট নিজে লিখতে চাইলে','textarea'],end];
+   case 'status': return [['date','তারিখ','date'],['which','কী স্থায়ী হলো','select','',[['both','পদ ও চাকরি দুটোই'],['post','শুধু পদ (কলম 3)'],['appt','শুধু চাকরি/নিয়োগ (কলম 4)']]],['newStatus','নতুন অবস্থা','select','',[['Permanent','Permanent'],['Temporary','Temporary']]],
+     ['memo','মেমো নম্বর'],['memoDate','মেমোর তারিখ','date'],['by','কে দিয়েছেন','text','যেমন DI/S(SE) Purulia'],['text','পুরো বয়ান নিজে লিখতে চাইলে','textarea']];
+   case 'resign': return [['date','তারিখ','date'],['time','সময়','text','যেমন 4 P.M.'],['accepted','কে গ্রহণ করেছে','text','যেমন M.C. No. 09/13 dt. 14-12-2013'],['reason','কলম 8 নিজে লিখতে চাইলে','text'],['c9','কলম 9 নিজে লিখতে চাইলে','textarea']];
+   case 'release': return [['date','রিলিজের তারিখ','date'],['reason','কলম 8','text',"যেমন Transferred through 'Utsashree'"],['cert','স্কুল ছাড়ার সার্টিফিকেট','select','',[['','হ্যাঁ, বসাও'],['false','না']]],
+     ['ml','মেডিক্যাল ছুটি নেওয়া (দিন)','text','খালি রাখলে ছুটির হিসাব থেকে নেবে'],['hapl','হাফ-পে ছুটি','text'],['eol','অসাধারণ (EOL) ছুটি','text'],['joinText','শেষ লাইন','text','খালি রাখলে: to join in another school'],['text','পুরো সার্টিফিকেট নিজে লিখতে চাইলে','textarea']];
+   case 'verify': return [['date','সার্টিফিকেটের তারিখ','date'],['style','কোন ধরন','select','',[['stamp','ছোট স্ট্যাম্প (কলম 12)'],['cert','বড় সার্টিফিকেট (দুই পাতা জুড়ে)']]],['from','কবে থেকে','date'],['to','কবে পর্যন্ত','date'],['di','বড় সার্টিফিকেটে D.I. অফিস','text'],['text','পুরো বয়ান নিজে লিখতে চাইলে','textarea']];
+   case 'note': return [['date','কোন জায়গায় বসবে (তারিখ)','date'],['textL','বাঁ পাতার লেখা','textarea'],['fromL','বাঁ পাতায় কোন কলম থেকে শুরু','select','',[['2','কলম 2'],['1','কলম 1'],['3','কলম 3'],['5','কলম 5']]],['textR','ডান পাতার লেখা','textarea']];
+  } return [];
+}
+function eventsView(T){
+  var H=SB.fullHistory(T,A.S).H, h='';
+  if(H.flags.length) h+='<div class="flagbox"><b>⚠ হিসাবের সঙ্গে মিলছে না — মূল অর্ডার দেখে নিন:</b><ul>'+H.flags.map(function(f){return '<li>'+esc(f.msg)+'</li>';}).join('')+'</ul></div>';
+  h+='<div class="row gap wrap"><button class="btn pri" data-act="autoFill">✍ আজ পর্যন্ত লিখে দাও</button><button class="btn" data-act="addE">+ নতুন ঘটনা</button><button class="btn" data-act="genInc">১ জুলাইয়ের ইনক্রিমেন্টগুলো নিজে বসাও</button><button class="btn" data-act="readT">📄 PDF/ছবি থেকে পড়ো</button></div>';
+  var evs=SB.sortEvents(T.events||[]);
+  if(!evs.length) h+='<div class="empty">প্রথমে “স্কুলে যোগদান” ঘটনা যোগ করুন।</div>';
+  var rowsBy={}; H.rows.forEach(function(r){ if(r.ev) (rowsBy[r.ev]=rowsBy[r.ev]||[]).push(r); });
+  evs.forEach(function(e){
+    var rs=rowsBy[e.id]||[], pay=null, txt=[];
+    rs.forEach(function(r){ if(r.kind==='pay'){ pay=r.c6; if(r.c8) txt.push('(8) '+r.c8); } (r.spans||[]).forEach(function(s){ txt.push(s.text); }); });
+    h+='<div class="card ev"><div class="evh"><span class="ed">'+esc(SB.fmt(e.date,A.S.dateFmt))+'</span><span class="et">'+esc(tname(e.type))+'</span>'+(pay?'<span class="ep">'+esc(pay)+'</span>':'')+'</div>'+
+      (e._flag?'<div class="flag">⚠ '+esc(e._flag)+'</div>':'')+
+      (txt.length?'<div class="evt">'+esc(txt.join('\n')).replace(/\n/g,'<br>')+'</div>':'')+
+      '<div class="row gap"><button class="btn sm2" data-act="editE" data-id="'+e.id+'">বদলান</button><button class="btn sm2 danger" data-act="delE" data-id="'+e.id+'">মুছুন</button></div></div>';
+  });
+  return h;
+}
+
+// ----- event dialog -----
+var DLG=null;
+function openEvent(type,id){
+  var T=A.T[A.tid]; var e=id? JSON.parse(JSON.stringify((T.events||[]).filter(function(x){return x.id===id;})[0]||{})) : {type:type, id:uid(), seq:Date.now()};
+  if(!id){ // defaults
+    if(type==='fix'){ e.commission='ROPA-2019'; e.level=SB.levelById(A.S,'L15')?'L15':(A.S.levels[0]||{}).id; applyComm(e); }
+    if(type==='join'){ e.post='Assistant Teacher'; e.sys='2009'; e.postStatus='Temporary'; e.apptStatus='Temporary'; }
+    if(type==='status'){ e.which='both'; e.newStatus='Permanent'; }
+    if(type==='verify'){ e.style='stamp'; }
+    if(type==='fix2009'){ e.wef='2006-01-01'; e.scaleText='PB-4 (Rs. 9000-40500) + GP Rs. 4800'; e.go='G.O. No. 46-SE(B) dt. 27/02/09'; }
+    if(type==='release'){ e.reason="Transferred through 'Utsashree'"; }
+    if(type==='inc'){ var y=new Date().getFullYear(); e.date=y+'-07-01'; }
+  }
+  DLG={e:e, isNew:!id};
+  drawDialog();
+}
+function drawDialog(){
+  var e=DLG.e, sc=schema(e.type), d=$('#dlg');
+  var h='<div class="dlgbox"><div class="dlgh"><b>'+esc(tname(e.type))+'</b><button class="ib" data-act="closeD">✕</button></div><div class="dlgb form" data-form="ev">';
+  sc.forEach(function(f){ var v=e[f[0]]; if(f[0]==='follow') v=e.follow===false?'false':''; if(f[0]==='cert') v=e.cert===false?'false':''; h+=fld(f[1],f[0],v==null?'':v,f[2],f[3],f[4]); });
+  h+='<div class="prev"><b>বইয়ে যা লেখা হবে:</b><div id="evprev"></div></div></div><div class="dlgf"><button class="btn" data-act="closeD">বাতিল</button><button class="btn pri" data-act="saveE">সেভ করুন</button></div></div>';
+  d.innerHTML=h; d.classList.add('on'); evPreview();
+}
+function evPreview(){
+  var T=JSON.parse(JSON.stringify(A.T[A.tid])); var e=DLG.e;
+  T.events=(T.events||[]).filter(function(x){return x.id!==e.id;}).concat([e]);
+  var H=SB.fullHistory(T,A.S).H, out=[];
+  H.rows.forEach(function(r){ if(r.ev!==e.id) return;
+    if(r.kind==='pay') out.push('(5) '+r.c5+'   (6) '+r.c6+'   (7) '+(r.c7||'—')+'\n(3) '+r.c3+'   (4) '+r.c4+(r.c8?'\n(8) '+r.c8:'')+(r.c9?'\n(9) '+r.c9:''));
+    (r.spans||[]).forEach(function(s){ out.push('[কলম '+s.from+(s.to!==s.from?'–'+s.to:'')+'] '+s.text); });
+    if(r.c1 && r.kind!=='pay') out.push('[কলম 1] '+r.c1);
+    if(r.c12) out.push('[কলম 12] '+r.c12);
+  });
+  var x=H.rows.filter(function(r){return r.ev===e.id;})[0]; var ev2=T.events.filter(function(z){return z.id===e.id;})[0];
+  var extra=''; if(e.type==='fix' && ev2 && ev2._pre!=null) extra='\n\nহিসাব: আগের বেতন '+ev2._pre+' × '+(e.factor||2.57)+' = '+ev2._tgt+' → লেভেলের পরের ঘর '+(ev2._exp!=null?ev2._exp:'?');
+  if(ev2 && ev2._flag) extra+='\n⚠ '+ev2._flag;
+  var el=$('#evprev'); if(el) el.innerHTML='<pre>'+esc(out.join('\n\n')+extra)+'</pre>';
+}
+function closeDialog(){ DLG=null; var d=$('#dlg'); d.classList.remove('on'); d.innerHTML=''; }
+
+// ----- leave -----
+function leaveView(T){
+  var FH=SB.fullHistory(T,A.S), H=FH.H, LV=FH.LV;
+  var h='<div class="muted sm">প্রতি বছরের পাওনা অ্যাপ নিজে বসায় (মেডিক্যাল '+A.S.leave.mc+', হাফ-পে '+A.S.leave.hap+', হাফ-পে সর্বোচ্চ '+A.S.leave.hapCap+')। বইয়ে অন্য সংখ্যা থাকলে বা ছুটি নিলে এখানে লিখুন।</div>';
+  if(!LV.rows.length) h+='<div class="empty">আগে “চাকরির ঘটনা”-তে যোগদান যোগ করুন।</div>';
+  LV.rows.forEach(function(r){
+    if(r.kind==='lnote'){ var v=(T.leave&&T.leave.notes&&T.leave.notes[r.key])||''; h+='<div class="card"><b>যাচাইয়ের নোট (স্কুল ছাড়ার পর)</b><div class="evt">'+esc(r.text)+'</div><label class="f"><span>নিজে লিখতে চাইলে</span><textarea data-lnote="'+r.key+'" rows="2">'+esc(v)+'</textarea></label></div>'; return; }
+    var o=r._o||{};
+    function li(k,lbl,ph){ return '<label class="lf"><span>'+lbl+'</span><input data-lk="'+r.key+'" data-f="'+k+'" inputmode="numeric" value="'+esc(o[k]||'')+'" placeholder="'+esc(ph||'')+'"></label>'; }
+    h+='<div class="card lcard"><div class="evh"><span class="ed">'+r.c2a+' → '+r.c2b+'</span><span class="ep">জমা: M.C. '+r.c13+' | H.A.P. '+r.c14+'</span></div>'+
+      '<div class="lgrid">'+li('mc','পাওনা M.C. 4(a)',String(r._auto.mc))+li('hap','পাওনা H.A.P. 4(b)',String(r._auto.hap))+li('t7','নেওয়া M.C. (7)','0')+li('t8','নেওয়া H.A.P. (8)','0')+
+      li('eol','EOL (11)','')+li('m10a','মাতৃত্ব পূর্ণ (10a)','')+li('vd','Vac. Det. 4(c)','')+li('t9','Vac. Det. নেওয়া (9)','')+'</div>'+
+      '<label class="f"><span>মন্তব্য (17)</span><input data-lk="'+r.key+'" data-f="rem" value="'+esc(o.rem||'')+'"></label></div>';
+  });
+  return h;
+}
+
+// ----- pages -----
+function pagesView(T){
+  return '<div class="row gap wrap"><button class="btn pri" data-act="pdf">PDF ডাউনলোড</button><button class="btn" data-act="html">প্রিন্টের HTML ফাইল</button></div>'+
+    '<div class="muted sm">পাতাগুলো আসল সার্ভিস বুকের ধাঁচে সাজানো। নীল লেখাটা হাতে কপি করবেন; সই, স্ট্যাম্প আর আঙুলের ছাপের জায়গা ফাঁকা।</div><div id="pagesWrap"></div>';
+}
+function drawPages(){
+  var T=A.T[A.tid], W=$('#pagesWrap'); if(!W) return;
+  var res=BOOK.allPages(T,A.S); var avail=Math.min(W.clientWidth||360, 820); var sc=avail/BOOK.PW;
+  W.innerHTML=res.pages.map(function(p){ return '<div class="pfit" style="width:'+(BOOK.PW*sc)+'px;height:'+(BOOK.PH*sc)+'px"><div style="transform:scale('+sc+');transform-origin:0 0">'+p+'</div></div>'; }).join('');
+}
+function loadScript(src){ return new Promise(function(ok,no){ var s=document.createElement('script'); s.src=src; s.onload=ok; s.onerror=no; document.head.appendChild(s); }); }
+function saveFile(name,data){
+  if(!A.dl){ try{ var blob=data instanceof Blob?data:new Blob([data],{type:/\.html$/.test(name)?'text/html':(/\.json$/.test(name)?'application/json':'application/octet-stream')}); var u=URL.createObjectURL(blob); var an=document.createElement('a'); an.href=u; an.download=name; document.body.appendChild(an); an.click(); setTimeout(function(){ URL.revokeObjectURL(u); an.remove(); },4000); toast('ফাইল নামানো হচ্ছে: '+name); }catch(e){ toast('ডাউনলোড হয়নি'); } return Promise.resolve(); }
+  return A.dl.save({filename:name,data:data}).then(function(){ toast('ফাইল সেভ হয়েছে'); }).catch(function(e){ if(e&&e.code==='declined') return; toast('ডাউনলোড হয়নি: '+(e&&e.code||e)); });
+}
+function fileName(T,ext){ return 'ServiceBook_'+String(T.name||'teacher').replace(/[^A-Za-z0-9]+/g,'_')+'.'+ext; }
+function exportPdf(){
+  var T=A.T[A.tid]; toast('PDF তৈরি হচ্ছে… একটু সময় লাগবে');
+  Promise.all([window.html2canvas?1:loadScript(new URL('vendor/html2canvas.min.js',location.href).href), (window.jspdf?1:loadScript(new URL('vendor/jspdf.umd.min.js',location.href).href))])
+  .then(function(){ return document.fonts?document.fonts.ready:null; })
+  .then(function(){
+    var res=BOOK.allPages(T,A.S); var host=document.createElement('div'); host.style.cssText='position:fixed;left:-10000px;top:0;width:794px'; document.body.appendChild(host);
+    var pdf=new window.jspdf.jsPDF({unit:'pt',format:'a4',compress:true}); var i=0;
+    function next(){ if(i>=res.pages.length){ document.body.removeChild(host); return saveFile(fileName(T,'pdf'),pdf.output('blob')); }
+      host.innerHTML=res.pages[i]; return window.html2canvas(host.firstChild,{scale:2,backgroundColor:'#ffffff',logging:false}).then(function(cv){
+        if(i>0) pdf.addPage(); pdf.addImage(cv.toDataURL('image/jpeg',0.92),'JPEG',0,0,595.28,841.89); i++; return next(); }); }
+    return next();
+  }).catch(function(e){ toast('PDF তৈরি হয়নি: '+(e&&e.message||e)); });
+}
+function exportHtml(){
+  var T=A.T[A.tid], res=BOOK.allPages(T,A.S);
+  var doc='<!DOCTYPE html><html><head><meta charset="utf-8"><title>Service Book - '+esc(T.name||'')+'</title><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif:wght@400;700&family=Roboto+Condensed:wght@400;700&display=swap"><style>@page{size:A4;margin:0}body{margin:0;background:#888}.bpage{margin:0 auto 10px;page-break-after:always}@media print{body{background:#fff}.bpage{margin:0}}'+BOOK.CSS+'</style></head><body>'+res.pages.join('')+'</body></html>';
+  saveFile(fileName(T,'html'),doc);
+}
+var toastT=null; function toast(t){ var el=$('#toast'); el.textContent=t; el.classList.add('on'); clearTimeout(toastT); toastT=setTimeout(function(){ el.classList.remove('on'); },3500); }
+
+// ---------- settings ----------
+function settingsView(){
+  var S=A.S, h='<div class="form" data-form="S">'+
+  fld('স্কুলের নাম (উপরে দেখাবে)','schoolName',S.schoolName)+
+  fld('তারিখ লেখার ধরন','dateFmt',S.dateFmt,'select','',[['dd-mm-yyyy','24-01-2008'],['dd.mm.yyyy','24.01.2008'],['dd-mm-yy','24-01-08'],['dd.mm.yy','24.01.08'],['dd/mm/yyyy','24/01/2008']])+
+  fld('ইনক্রিমেন্টের কলম 8-এর লেখা','incLabel',S.incLabel,'text','যেমন Increment বা Annual Increment')+
+  fld('নোশনাল হলে আগে বসবে','notionalPrefix',S.notionalPrefix)+
+  fld('ছুটির কলম (9)-এর সাধারণ লেখা','leaveTextDefault',S.leaveTextDefault)+
+  fld('ROPA 2009: ইনক্রিমেন্ট %','r2009.pct',S.r2009.pct,'number')+fld('ROPA 2009: কত টাকায় রাউন্ড (উপরের দিকে)','r2009.roundTo',S.r2009.roundTo,'number')+
+  fld('ইনক্রিমেন্টের মাস','inc.month',S.inc.month,'number','7 = জুলাই')+fld('ইনক্রিমেন্টের দিন','inc.day',S.inc.day,'number')+fld('প্রথম ইনক্রিমেন্টের আগে কত মাস চাকরি লাগবে','inc.minMonths',S.inc.minMonths,'number')+
+  fld('বছরে মেডিক্যাল ছুটি পাওনা','leave.mc',S.leave.mc,'number')+fld('বছরে হাফ-পে ছুটি পাওনা','leave.hap',S.leave.hap,'number')+fld('হাফ-পে ছুটি সর্বোচ্চ জমা','leave.hapCap',S.leave.hapCap,'number')+
+  fld('পাতা নম্বর: প্রথম পাতা','pages.part',S.pages.part,'number')+fld('পাতা নম্বর: আঙুলের ছাপ','pages.finger',S.pages.finger,'number')+fld('পাতা নম্বর: History of Service শুরু','pages.hist',S.pages.hist,'number')+fld('পাতা নম্বর: Leave Account শুরু','pages.leave',S.pages.leave,'number')+
+  fld('প্রতি পাতায় দাগের সংখ্যা','lines',S.lines,'number','বইয়ের পাতার সঙ্গে মেলাতে বদলান (১৬–২৪)')+'</div>';
+  h+='<h3>DA-র তালিকা</h3><div class="muted sm">সবার জন্য একই। নতুন DA ঘোষণা হলে যেকোনো তারিখে, যেকোনো % যোগ করুন — বছরে যতবার খুশি। এটা শুধু “৫. বেতন ও DA” পাতায় কাজে লাগে; সার্ভিস বুকের পাতা বদলায় না।</div>';
+  (S.da||[]).forEach(function(x,i){ h+='<div class="card form darow" data-form="D" data-i="'+i+'">'+fld('কবে থেকে','from',x.from,'date')+fld('DA %','pct',x.pct,'number')+fld('G.O./মেমো','go',x.go)+'<button class="btn sm2 danger" data-act="delD" data-i="'+i+'">মুছুন</button></div>'; });
+  h+='<div class="row gap wrap"><button class="btn" data-act="addD">+ নতুন DA</button><button class="btn" data-act="readDA">📄 DA-র G.O. PDF থেকে পড়ো</button></div>';
+  h+='<h3>পে কমিশন</h3><div class="muted sm">প্রতিটা পে কমিশনের ফিক্সেশনের নিয়ম। নতুন কমিশনের G.O. বেরোলে গুণক, তারিখ আর ইনক্রিমেন্টের হার এখানে বসান, বা নিচের বোতাম দিয়ে G.O.-র PDF থেকে পড়ান।</div>';
+  (S.commissions||[]).forEach(function(C,i){ h+='<div class="card form" data-form="C" data-i="'+i+'">'+fld('নাম','name',C.name)+fld('পদ্ধতি','method',C.method,'select','',[['matrix','গুণ করে পে-ম্যাট্রিক্সের পরের ঘর'],['band','গুণ করে রাউন্ড + গ্রেড পে'],['manual','নিজে বসানো']])+
+    fld('গুণক (fitment factor)','factor',C.factor,'text','খালি = এখনও ঘোষণা হয়নি')+fld('নোশনাল তারিখ','date',C.date,'date')+fld('আসল টাকা কবে থেকে','actualFrom',C.actualFrom,'date')+fld('G.O.','go',C.go)+
+    fld('ইনক্রিমেন্ট %','incPct',C.incPct,'number','এখন 3%। বদলালে নতুন লেভেলের ঘর এই হারে তৈরি হবে')+(C.method==='band'?fld('গুণের পর রাউন্ড (টাকা)','round',C.round,'number')+fld('ইনক্রিমেন্ট রাউন্ড (টাকা)','incRound',C.incRound,'number'):fld('ম্যাট্রিক্সের ঘর রাউন্ড (টাকা)','cellRound',C.cellRound||100,'number'))+
+    (C.note?'<small class="muted">'+esc(C.note)+'</small>':'')+'<div class="row gap" style="margin-top:8px"><button class="btn sm2 danger" data-act="delC" data-i="'+i+'">মুছুন</button></div></div>'; });
+  h+='<div class="row gap wrap"><button class="btn" data-act="addC">+ নতুন পে কমিশন</button><button class="btn pri" data-act="readGO">📄 G.O.-র PDF থেকে গুণক ও পে-ম্যাট্রিক্স পড়ো</button></div>';
+  h+='<h3>পে-ম্যাট্রিক্স (লেভেল)</h3><div class="muted sm">নতুন পে কমিশন এলে এখানে নতুন লেভেল যোগ করুন, তারপর ঘটনায় “পে-রিভিশন” দিন। পুরনো এন্ট্রি বদলাবে না। প্রথম ঘর দিলে বাকি ঘর 3% করে 100-তে রাউন্ড হয়ে তৈরি হয় — সরকারি তালিকার সঙ্গে মিলিয়ে নেবেন।</div>';
+  S.levels.forEach(function(L,i){
+    h+='<div class="card form" data-form="L" data-i="'+i+'">'+fld('লেভেলের নাম','name',L.name)+fld('পে কমিশন','commission',L.commission,'select','',commOpts().concat(commOpts().some(function(o){return o[0]===L.commission;})?[]:[[L.commission,L.commission]]))+fld('আগের পে-ব্যান্ড ও গ্রেড পে','pre',L.pre)+
+      fld('সব ঘর (কমা দিয়ে)','cells',L.cells.join(', '),'textarea',L.note||'')+
+      '<div class="row gap"><button class="btn sm2" data-act="genL" data-i="'+i+'">প্রথম ঘর থেকে বাকিগুলো তৈরি</button><button class="btn sm2 danger" data-act="delL" data-i="'+i+'">লেভেল মুছুন</button></div></div>'; });
+  h+='<button class="btn pri" data-act="addL">+ নতুন লেভেল</button>';
+  return '<div class="pad">'+h+'</div>';
+}
+
+// ---------- confirm ----------
+function ask(msg,ok){ var d=$('#dlg'); d.innerHTML='<div class="dlgbox small"><div class="dlgb"><p>'+esc(msg)+'</p></div><div class="dlgf"><button class="btn" data-act="closeD">না</button><button class="btn danger" id="askYes">হ্যাঁ</button></div></div>'; d.classList.add('on');
+  $('#askYes').onclick=function(){ closeDialog(); ok(); }; }
+
+// ---------- events wiring ----------
+document.addEventListener('click',function(ev){
+  var b=ev.target.closest('[data-act]'); if(!b) return; var act=b.getAttribute('data-act'), id=b.getAttribute('data-id');
+  if(act==='home'){ A.view='home'; render(); }
+  else if(act==='settings'){ A.view='settings'; render(); }
+  else if(act==='newT'){ var nid=uid(); A.T[nid]={id:nid, name:'', sex:'M', desigShort:'A.T.', dobSource:'West Bengal Board of Secondary Education', events:[], leave:{ov:{},notes:{}}}; pendingNew[nid]=1; A.tid=nid; A.view='teacher'; A.tab='info'; render(); scheduleSave('T',nid); }
+  else if(act==='openT'){ A.tid=id; A.view='teacher'; A.tab='events'; render(); }
+  else if(act==='tab'){ A.tab=b.getAttribute('data-tab'); render(); }
+  else if(act==='delT'){ ask('এই শিক্ষকের সব তথ্য মুছে যাবে, ফেরত আনা যাবে না। মুছবেন?',function(){ var t=A.tid; delete A.T[t]; A.view='home'; render(); if(A.mode==='db') doSave('del',t); else lsPut(); }); }
+  else if(act==='addE'){ var d=$('#dlg'); d.innerHTML='<div class="dlgbox"><div class="dlgh"><b>কোন ঘটনা যোগ করবেন?</b><button class="ib" data-act="closeD">✕</button></div><div class="dlgb">'+ETYPES.map(function(t){ return '<button class="btn block" data-act="pickE" data-t="'+t[0]+'">'+t[1]+'</button>'; }).join('')+'</div></div>'; d.classList.add('on'); }
+  else if(act==='pickE'){ openEvent(b.getAttribute('data-t')); }
+  else if(act==='editE'){ var T=A.T[A.tid]; var e=(T.events||[]).filter(function(x){return x.id===id;})[0]; if(e) openEvent(e.type,id); }
+  else if(act==='delE'){ ask('এই ঘটনাটা মুছবেন?',function(){ var T=A.T[A.tid]; T.events=T.events.filter(function(x){return x.id!==id;}); render(); scheduleSave('T',A.tid); }); }
+  else if(act==='closeD'){ closeDialog(); }
+  else if(act==='saveE'){ var T2=A.T[A.tid]; var e2=DLG.e; if(!e2.date){ toast('তারিখ দিন'); return; } ['_flag','_exp','_pre','_tgt'].forEach(function(k){ delete e2[k]; });
+    T2.events=(T2.events||[]).filter(function(x){return x.id!==e2.id;}).concat([e2]); closeDialog(); render(); scheduleSave('T',A.tid); }
+  else if(act==='genInc'){ var T3=A.T[A.tid]; var add=SB.genIncrements(T3,A.S); add.forEach(function(x,i){ x.id=uid(); x.seq=Date.now()+i; }); T3.events=(T3.events||[]).concat(add); render(); if(add.length){ scheduleSave('T',A.tid); toast(add.length+'টি ইনক্রিমেন্ট যোগ হলো'); } else toast('নতুন কোনো ইনক্রিমেন্ট বাকি নেই'); }
+  else if(act==='pdf'){ exportPdf(); } else if(act==='html'){ exportHtml(); }
+  else if(act==='backup'){ doBackup(); }
+  else if(act==='restore'){ doRestore(); }
+  else if(act==='reloadApp'){ location.reload(); }
+  else if(act==='addD'){ A.S.da=A.S.da||[]; A.S.da.push({from:SB.todayStr(), pct:'', go:''}); render(); scheduleSave('S'); }
+  else if(act==='delD'){ var di=+b.getAttribute('data-i'); ask('এই DA লাইনটা মুছবেন?',function(){ A.S.da.splice(di,1); render(); scheduleSave('S'); }); }
+  else if(act==='readDA'){ pickFile(importDA); }
+  else if(act==='applyDA'){ applyDAImport(); }
+  else if(act==='autoFill'){ autoFill(); }
+  else if(act==='autoJoinSave'){ var T9=A.T[A.tid], e9=DLG.e; if(!e9.date){ toast('তারিখ দিন'); return; } if(!e9.school||!e9.school.trim()){ toast('স্কুলের নাম লিখুন'); return; } ['_flag','_exp','_pre','_tgt'].forEach(function(k){ delete e9[k]; }); T9.events.push(e9); closeDialog(); runAutoFill(T9); }
+  else if(act==='noNewJoin'){ var T8=A.T[A.tid]; T8.noNewJoin=DLG.endDate; closeDialog(); runAutoFill(T8); }
+  else if(act==='goPages'){ closeDialog(); A.tab='pages'; render(); }
+  else if(act==='addC'){ A.S.commissions.push({name:'New Pay Commission', method:'matrix', factor:'', incPct:3, cellRound:100, date:'', actualFrom:'', go:''}); render(); scheduleSave('S'); }
+  else if(act==='delC'){ var ci=+b.getAttribute('data-i'); ask('এই পে কমিশন মুছবেন?',function(){ A.S.commissions.splice(ci,1); render(); scheduleSave('S'); }); }
+  else if(act==='readT'){ pickFile(importTeacher); }
+  else if(act==='readGO'){ pickFile(importGO); }
+  else if(act==='copyTxt'){ var tx=b.getAttribute('data-txt')||($('#rawtxt')||{}).value||''; try{ navigator.clipboard.writeText(tx).then(function(){ toast('কপি হয়েছে'); },function(){ toast('কপি হয়নি — লেখাটা লম্বা চেপে কপি করুন'); }); }catch(e){ toast('কপি হয়নি'); } }
+  else if(act==='applyT'){ applyTeacherImport(); }
+  else if(act==='applyGO'){ applyGOImport(); }
+  else if(act==='addL'){ A.S.levels.push({id:uid(), commission:'ROPA-2019', name:'Level ', pre:'', cells:[]}); render(); scheduleSave('S'); }
+  else if(act==='delL'){ var i=+b.getAttribute('data-i'); ask('এই লেভেল মুছবেন? যেসব ঘটনায় এটা ব্যবহার হয়েছে সেগুলোর হিসাব ভুল হয়ে যাবে।',function(){ A.S.levels.splice(i,1); render(); scheduleSave('S'); }); }
+  else if(act==='genL'){ var j=+b.getAttribute('data-i'), L=A.S.levels[j]; if(!L.cells.length){ toast('আগে প্রথম ঘরটা লিখুন'); return; } var CC=SB.commByName(A.S,L.commission)||{}; L.cells=SB.genCells(L.cells[0],40,CC.incPct||3,CC.cellRound||100); render(); scheduleSave('S'); }
+});
+function setPath(o,path,v){ var p=path.split('.'); while(p.length>1){ o=o[p.shift()]; } o[p[0]]=v; }
+document.addEventListener('input',function(ev){
+  var t=ev.target, form=t.closest('[data-form]');
+  if(t.hasAttribute('data-lk')){ var T=A.T[A.tid]; T.leave=T.leave||{ov:{},notes:{}}; T.leave.ov=T.leave.ov||{}; var k=t.getAttribute('data-lk'); var o=T.leave.ov[k]=T.leave.ov[k]||{}; o[t.getAttribute('data-f')]=t.value.trim(); scheduleSave('T',A.tid); return; }
+  if(t.hasAttribute('data-lnote')){ var T5=A.T[A.tid]; T5.leave=T5.leave||{ov:{},notes:{}}; T5.leave.notes=T5.leave.notes||{}; T5.leave.notes[t.getAttribute('data-lnote')]=t.value; scheduleSave('T',A.tid); return; }
+  if(!form || !t.hasAttribute('data-k')) return; var k2=t.getAttribute('data-k'), v=t.value, f=form.getAttribute('data-form');
+  if(f==='info'){ A.T[A.tid][k2]=v; scheduleSave('T',A.tid); if(k2==='dob'||k2==='dobSource'){ var pv=form.querySelector('.prev pre'); if(pv) pv.textContent=SB.dobLine(A.T[A.tid].dob,A.T[A.tid].dobSource); } }
+  else if(f==='ev'){ if(k2==='follow') DLG.e.follow=(v==='false'?false:undefined); else if(k2==='cert') DLG.e.cert=(v==='false'?false:undefined); else DLG.e[k2]=v; if(k2==='commission' && DLG.e.type==='fix'){ applyComm(DLG.e); drawDialog(); return; } evPreview(); }
+  else if(f==='S'){ var num=t.type==='number'; setPath(A.S,k2,num?(+v):v); scheduleSave('S'); }
+  else if(f==='C'){ var C=A.S.commissions[+form.getAttribute('data-i')]; var old=C.name; C[k2]=(t.type==='number'?+v:v); if(k2==='name'){ A.S.levels.forEach(function(L){ if(L.commission===old) L.commission=v; }); } scheduleSave('S'); if(k2==='method') render(); }
+  else if(f==='D'){ var D=A.S.da[+form.getAttribute('data-i')]; D[k2]=(k2==='pct'?(v===''?'':+v):v); scheduleSave('S'); }
+  else if(f==='L'){ var L=A.S.levels[+form.getAttribute('data-i')]; if(k2==='cells'){ L.cells=v.split(/[^0-9]+/).filter(Boolean).map(Number); } else L[k2]=v; scheduleSave('S'); }
+});
+document.addEventListener('change',function(ev){ if(ev.target.tagName==='SELECT') ev.target.dispatchEvent(new Event('input',{bubbles:true})); });
+window.addEventListener('resize',function(){ if(A.view==='teacher'&&A.tab==='pages') drawPages(); });
+
+// ---------- offline reading (PDF/ছবি) ----------
+var IMP=null;
+function pickFile(cb){ var inp=document.createElement('input'); inp.type='file'; inp.accept='application/pdf,image/*'; inp.style.display='none'; document.body.appendChild(inp);
+  inp.onchange=function(){ var f=inp.files[0]; document.body.removeChild(inp); if(f) cb(f); }; inp.click(); }
+function busy(msg){ var d=$('#dlg'); d.innerHTML='<div class="dlgbox small"><div class="dlgb"><p><b>পড়ছি…</b></p><p id="busymsg" class="muted sm">'+esc(msg||'')+'</p><p class="muted sm">বড় PDF বা ছবিতে ১–২ মিনিট লাগতে পারে। প্রথমবার লেখা চেনার ফাইল (প্রায় ৭ MB) লোড হয়।</p></div></div>'; d.classList.add('on'); }
+function prog(m){ var el=$('#busymsg'); if(el) el.textContent=m; }
+function scanNote(R){ if(!R.scanned.length) return '<div class="okbox">এটা টাইপ করা PDF — লেখা সরাসরি পড়া গেছে, ভুলের সম্ভাবনা কম।</div>';
+  return '<div class="flagbox">পাতা '+R.scanned.join(', ')+' স্ক্যান করা ছবি — অ্যাপ নিজে লেখা চিনেছে (OCR)'+(R.conf!=null?', গড় নিশ্চয়তা '+R.conf+'%':'')+'। ছাপা লেখা মোটামুটি ঠিক আসে, <b>হাতের লেখা প্রায়ই ভুল পড়ে বা পড়তেই পারে না</b>। যোগ করার আগে প্রতিটা সংখ্যা মিলিয়ে নিন।</div>'; }
+function rawBlock(R){ return '<details><summary>পুরো পড়া লেখা দেখুন / কপি করুন</summary><textarea id="rawtxt" rows="10" readonly style="width:100%;font-size:12px">'+esc(R.text)+'</textarea><button class="btn sm2" data-act="copyTxt">সব কপি</button></details>'; }
+function refsBlock(R){ if(!R.refs.length) return ''; return '<h4>পাওয়া G.O./মেমো নম্বর (টিপলে কপি হবে)</h4>'+R.refs.slice(0,30).map(function(r){ return '<button class="btn sm2 block" data-act="copyTxt" data-txt="'+esc(r.text)+'">'+esc(r.text)+'</button>'; }).join(''); }
+
+function importTeacher(file){
+  busy('ফাইল খুলছি…');
+  READER.read(file,prog).then(function(doc){ var R=READER.parse(doc); IMP={R:R}; drawTeacherImport(); })
+  .catch(function(e){ closeDialog(); toast('পড়া যায়নি: '+(e&&e.message||e)); });
+}
+var INFO_LBL={name:'নাম',dob:'জন্ম তারিখ',father:'বাবা/স্বামীর নাম',height:'উচ্চতা'};
+function guessComm(d){ var L=(A.S.commissions||[]).filter(function(c){return c.date && c.date<=d;}).sort(function(a,b){return b.date.localeCompare(a.date);}); return L[0]?L[0].name:''; }
+function drawTeacherImport(){
+  var R=IMP.R, T=A.T[A.tid], h='<div class="dlgbox"><div class="dlgh"><b>ফাইল থেকে যা পাওয়া গেল</b><button class="ib" data-act="closeD">✕</button></div><div class="dlgb">'+scanNote(R);
+  var keys=Object.keys(R.info);
+  if(keys.length){ h+='<h4>ব্যক্তিগত তথ্য</h4>'; keys.forEach(function(k){ var cur=T[k]; h+='<label class="chk"><input type="checkbox" data-ik="'+k+'"'+(cur?'':' checked')+'> <span>'+INFO_LBL[k]+'</span> <input class="imv" data-iv="'+k+'" type="'+(k==='dob'?'date':'text')+'" value="'+esc(R.info[k])+'">'+(cur?'<small>এখন আছে: '+esc(cur)+'</small>':'')+'</label>'; }); }
+  var have={}; (T.events||[]).forEach(function(e){ if(SB.PAYTYPES[e.type]) have[e.date]=e; });
+  if(R.pays.length){ h+='<h4>বেতনের সারি ('+R.pays.length+'টি)</h4><div class="muted sm">একই তারিখের ঘটনা আগে থেকে থাকলে শুধু বেতনটা বসবে, আর হিসাবের সঙ্গে না মিললে লাল দাগ দেখাবে।</div>';
+    R.pays.forEach(function(p,i){ var ex=have[p.date];
+      h+='<div class="imrow"><label class="chk"><input type="checkbox" data-pi="'+i+'" checked></label><input type="date" data-pd="'+i+'" value="'+p.date+'"><select data-pk="'+i+'">'+[['inc','ইনক্রিমেন্ট'],['fix','পে-রিভিশন'],['benefit','১০ বছর/CAS'],['payrow','অন্য সারি'],['join','যোগদান']].map(function(o){ return '<option value="'+o[0]+'"'+(o[0]===p.kind?' selected':'')+'>'+o[1]+'</option>'; }).join('')+'</select><input data-pp="'+i+'" inputmode="numeric" value="'+p.pay+'">'+
+        '<small class="muted">'+(ex?'আগে থেকে আছে · ':'')+esc(p.line.slice(0,90))+'</small></div>'; }); }
+  if(R.pays.length && !(T.events||[]).some(function(e){return e.type==='join';})) h+='<div class="flagbox">এই শিক্ষকের “স্কুলে যোগদান” এখনও দেওয়া হয়নি। সারিগুলো যোগ হবে, কিন্তু বেতনের হিসাব মেলানোর জন্য পরে যোগদানটা দিয়ে দিন।</div>';
+  if(!keys.length && !R.pays.length) h+='<div class="empty">কাজের মতো তারিখ-বেতন কিছু খুঁজে পাওয়া যায়নি। নিচের পুরো লেখাটা দেখে নিজে বসাতে পারেন।</div>';
+  h+=refsBlock(R)+rawBlock(R)+'</div><div class="dlgf"><button class="btn" data-act="closeD">বাতিল</button><button class="btn pri" data-act="applyT">টিক দেওয়াগুলো যোগ করো</button></div></div>';
+  var d=$('#dlg'); d.innerHTML=h; d.classList.add('on');
+}
+function applyTeacherImport(){
+  var R=IMP.R, T=A.T[A.tid], d=$('#dlg'), nInfo=0, nNew=0, nUpd=0;
+  d.querySelectorAll('[data-ik]').forEach(function(c){ if(!c.checked) return; var k=c.getAttribute('data-ik'); var v=d.querySelector('[data-iv="'+k+'"]').value.trim(); if(v){ T[k]=v; nInfo++; } });
+  T.events=T.events||[]; var have={}; T.events.forEach(function(e){ if(SB.PAYTYPES[e.type]) have[e.date]=e; });
+  var hasJoin=T.events.some(function(e){return e.type==='join';});
+  d.querySelectorAll('[data-pi]').forEach(function(c){ if(!c.checked) return; var i=c.getAttribute('data-pi');
+    var date=d.querySelector('[data-pd="'+i+'"]').value, k=d.querySelector('[data-pk="'+i+'"]').value, pay=d.querySelector('[data-pp="'+i+'"]').value.replace(/[^0-9]/g,'');
+    if(!date) return; var ex=have[date];
+    if(ex){ ex.pay=pay; nUpd++; return; }
+    var e={id:uid(), seq:Date.now()+nNew, type:k, date:date, pay:pay};
+    if(k==='join'){ e.type='join'; e.post='Assistant Teacher'; e.school='(স্কুলের নাম ও ঠিকানা লিখুন)'; e.sys=date>='2016-01-01'?((A.S.levels[0]||{}).id||'2009'):(date>='2006-01-01'?'2009':'manual'); e.postStatus='Temporary'; e.apptStatus='Temporary'; hasJoin=true; }
+    if(e.type==='fix'){ e.commission=guessComm(date)||'ROPA-2019'; var keepPay=e.pay, keepDate=e.date; applyComm(e); e.pay=keepPay; e.date=keepDate;
+      if(e.method==='matrix'){ var pn=+pay, lv=A.S.levels.filter(function(L){ return L.cells.indexOf(pn)>=0; }); var lc=lv.filter(function(L){return L.commission===e.commission;}); var pick=(lc[0]||lv[0]); if(pick) e.level=pick.id; else if(!e.level) e.level=(A.S.levels[0]||{}).id; } }
+    T.events.push(e); have[date]=e; nNew++; });
+  closeDialog(); A.tab='events'; render(); scheduleSave('T',A.tid);
+  toast('যোগ হলো: তথ্য '+nInfo+', নতুন সারি '+nNew+', বেতন বসানো '+nUpd);
+}
+
+function importGO(file){
+  busy('ফাইল খুলছি…');
+  READER.read(file,prog).then(function(doc){ var R=READER.parse(doc); IMP={R:R}; drawGOImport(); })
+  .catch(function(e){ closeDialog(); toast('পড়া যায়নি: '+(e&&e.message||e)); });
+}
+function drawGOImport(){
+  var R=IMP.R, h='<div class="dlgbox"><div class="dlgh"><b>G.O. থেকে যা পাওয়া গেল</b><button class="ib" data-act="closeD">✕</button></div><div class="dlgb">'+scanNote(R);
+  h+='<label class="f form"><span>কোন পে কমিশনে বসাব</span><select id="goComm">'+commOpts().map(function(o,i){ return '<option value="'+esc(o[0])+'"'+(i===commOpts().length-1?' selected':'')+'>'+esc(o[1])+'</option>'; }).join('')+'</select></label>';
+  h+='<label class="chk"><input type="checkbox" id="goFacChk"'+(R.factor?' checked':'')+'> <span>গুণক (fitment factor)</span> <input class="imv" id="goFac" value="'+(R.factor||'')+'"></label>'+(R.factor?'':'<small class="muted">লেখায় গুণক খুঁজে পাওয়া যায়নি।</small>');
+  if(R.refs.length){ var gref=R.refs.filter(function(r){return /^G/i.test(r.kind);})[0]||R.refs[0]; h+='<label class="chk"><input type="checkbox" id="goRefChk" checked> <span>G.O.</span> <input class="imv" id="goRef" value="'+esc(gref.text)+'"></label>'; }
+  if(R.levels.length){ h+='<h4>পে-ম্যাট্রিক্সের কলাম ('+R.levels.length+'টি)</h4><div class="muted sm">প্রতিটা কলাম একটা লেভেল হিসেবে যোগ হবে। নামগুলো G.O. দেখে ঠিক করে দিন।</div>';
+    R.levels.forEach(function(L,i){ h+='<div class="imrow"><label class="chk"><input type="checkbox" data-li="'+i+'" checked></label><input data-ln="'+i+'" value="'+esc(L.name||('Level '+(i+1)))+'"><small class="muted">'+L.cells.length+'টি ঘর: '+L.cells.slice(0,5).join(', ')+' … '+L.cells[L.cells.length-1]+'</small></div>'; }); }
+  else h+='<div class="muted sm">পে-ম্যাট্রিক্সের সংখ্যার কলাম খুঁজে পাওয়া যায়নি। লেভেলের প্রথম ঘর নিজে লিখে “প্রথম ঘর থেকে বাকিগুলো তৈরি” টিপতে পারেন।</div>';
+  h+=refsBlock(R)+rawBlock(R)+'</div><div class="dlgf"><button class="btn" data-act="closeD">বাতিল</button><button class="btn pri" data-act="applyGO">টিক দেওয়াগুলো বসাও</button></div></div>';
+  var d=$('#dlg'); d.innerHTML=h; d.classList.add('on');
+}
+function applyGOImport(){
+  var R=IMP.R, d=$('#dlg'), cn=$('#goComm').value, C=SB.commByName(A.S,cn), n=0;
+  if(C && $('#goFacChk') && $('#goFacChk').checked && $('#goFac').value.trim()){ C.factor=+$('#goFac').value.trim()||$('#goFac').value.trim(); }
+  if(C && $('#goRefChk') && $('#goRefChk').checked){ C.go=$('#goRef').value.trim(); }
+  d.querySelectorAll('[data-li]').forEach(function(c){ if(!c.checked) return; var i=+c.getAttribute('data-li'); A.S.levels.push({id:uid(), commission:cn, name:d.querySelector('[data-ln="'+i+'"]').value, pre:'', cells:R.levels[i].cells.slice(), note:'G.O. থেকে পড়া — মিলিয়ে নিন'}); n++; });
+  closeDialog(); render(); scheduleSave('S'); toast('বসানো হলো'+(n?': '+n+'টি লেভেল':''));
+}
+
+
+// ---------- auto fill up to today ----------
+function autoFill(){
+  var T=A.T[A.tid], evs=SB.sortEvents(T.events||[]);
+  var joins=evs.filter(function(e){return e.type==='join';});
+  if(!joins.length){ toast('আগে প্রথম স্কুলে যোগদান যোগ করুন'); openEvent('join'); return; }
+  var lastJ=joins[joins.length-1], endE=evs.filter(function(e){ return (e.type==='release'||e.type==='resign') && e.date>=lastJ.date; })[0];
+  if(endE && T.noNewJoin!==endE.date){ askNewJoin(T,lastJ,endE); return; }
+  runAutoFill(T);
+}
+function askNewJoin(T,lastJ,endE){
+  var H=SB.fullHistory(T,A.S).H, st=H.state;
+  var e={type:'join', id:uid(), seq:Date.now(), date:SB.addDays(endE.date,1), post:lastJ.post||'Assistant Teacher', school:'', scale:'', postStatus:'Permanent', apptStatus:'Permanent',
+    sys: st.sys==='matrix'?st.level:(st.sys==='2009'?'2009':'manual')};
+  var L=SB.levelById(A.S,e.sys); if(L) e.scale=L.name+'\n'+L.pre;
+  DLG={e:e, isNew:true, auto:true, endDate:endE.date};
+  var d=$('#dlg'); d.innerHTML='<div class="dlgbox"><div class="dlgh"><b>'+esc(SB.fmt(endE.date,A.S.dateFmt))+'-এ আগের স্কুল ছেড়েছেন। নতুন স্কুলে যোগ দিয়েছেন?</b><button class="ib" data-act="closeD">✕</button></div><div class="dlgb form" data-form="ev">'+
+    fld('নতুন স্কুলে যোগদানের তারিখ','date',e.date,'date')+fld('পদ','post',e.post)+fld('স্কুলের নাম ও পুরো ঠিকানা','school','','textarea')+fld('স্কুলের স্বীকৃতির ইতিহাস (না জানলে খালি)','recog','','textarea')+fld('বেতনক্রম (কলম 2)','scale',e.scale,'textarea')+
+    '<div class="muted sm">বেতন আগের স্কুলের শেষ বেতন থেকে চলবে: <b>'+(H.finalPay!=null?SB.money(H.finalPay):'—')+'</b></div><div class="prev"><b>বইয়ে যা লেখা হবে:</b><div id="evprev"></div></div></div>'+
+    '<div class="dlgf"><button class="btn" data-act="noNewJoin">না, যোগ দিইনি</button><button class="btn pri" data-act="autoJoinSave">হ্যাঁ, সেভ করে লেখো</button></div></div>';
+  d.classList.add('on'); evPreview();
+}
+function runAutoFill(T){
+  var today=SB.todayStr(), added={inc:0, fix:[]}, notes=[];
+  T.events=T.events||[];
+  var evs=SB.sortEvents(T.events), first=(evs.filter(function(e){return e.type==='join';})[0]||{}).date||'';
+  (A.S.commissions||[]).forEach(function(C){
+    if(!C.date || C.date<first || C.date>today) return;
+    var applied=T.events.some(function(e){ return e.type==='fix' && (e.commission===C.name || e.date===C.date); }) || (C.name==='ROPA-2009' && T.events.some(function(e){return e.type==='fix2009';}));
+    if(applied) return;
+    if(C.method!=='manual' && (C.factor===''||C.factor==null)){ notes.push(C.name+': গুণক এখনও বসানো হয়নি, তাই এই ফিক্সেশন বাদ রাখলাম। G.O. বেরোলে সেটিংসে গুণক বসিয়ে বোতামটা আবার টিপবেন।'); return; }
+    var e={id:uid(), seq:Date.now(), type:'fix', commission:C.name}; applyComm(e);
+    if(C.method==='matrix'){ var lv=A.S.levels.filter(function(L){return L.commission===C.name;}); if(!lv.length){ notes.push(C.name+': এই কমিশনের পে-ম্যাট্রিক্স (লেভেল) বসানো নেই, তাই ফিক্সেশন বাদ রাখলাম।'); return; } e.level=lv[0].id; if(lv.length>1) notes.push(C.name+': লেভেল হিসেবে '+lv[0].name+' ধরেছি — ঠিক না হলে ঘটনাটা খুলে বদলে দিন।'); }
+    T.events.push(e); added.fix.push(C.name);
+  });
+  var inc=SB.genIncrements(T,A.S,today); inc.forEach(function(x,i){ x.id=uid(); x.seq=Date.now()+i+1; }); T.events=T.events.concat(inc); added.inc=inc.length;
+  render(); scheduleSave('T',A.tid);
+  var FH=SB.fullHistory(T,A.S), lv2=FH.LV.rows.filter(function(r){return r.kind==='leave';}), lastLv=lv2[lv2.length-1];
+  var d=$('#dlg'); d.innerHTML='<div class="dlgbox"><div class="dlgh"><b>আজ ('+esc(SB.fmt(today,A.S.dateFmt))+') পর্যন্ত লেখা হলো</b><button class="ib" data-act="closeD">✕</button></div><div class="dlgb">'+
+    '<ul><li>নতুন ইনক্রিমেন্ট: <b>'+added.inc+'টি</b>'+(added.inc?' (ছুটির কলমে “'+esc(A.S.leaveTextDefault)+'”)':'')+'</li>'+(added.fix.length?'<li>পে-রিভিশন: <b>'+esc(added.fix.join(', '))+'</b></li>':'')+
+    '<li>এখনকার বেতন: <b>'+(FH.H.finalPay!=null?SB.money(FH.H.finalPay):'—')+'</b></li>'+(lastLv?'<li>ছুটির হিসাব '+esc(lastLv.c2b)+' পর্যন্ত — জমা M.C. <b>'+esc(lastLv.c13)+'</b>, H.A.P. <b>'+esc(lastLv.c14)+'</b></li>':'')+'</ul>'+
+    (notes.length?'<div class="flagbox"><ul>'+notes.map(function(n){return '<li>'+esc(n)+'</li>';}).join('')+'</ul></div>':'')+
+    '<div class="muted sm">কোনো বছরে ছুটি নিয়ে থাকলে “৩. ছুটির হিসাব”-এ সেই বছরে দিন লিখুন। কোনো সারিতে আলাদা লেখা লাগলে “বদলান” টিপুন। চলতি বছরের ছুটির সারি বছর পূর্ণ হলে নিজে আসবে।</div></div>'+
+    '<div class="dlgf"><button class="btn" data-act="closeD">ঠিক আছে</button><button class="btn pri" data-act="goPages">বইয়ের পাতা দেখাও</button></div></div>';
+  d.classList.add('on');
+}
+
+
+// ---------- pay + DA page ----------
+function daView(T){
+  var FH=SB.fullHistory(T,A.S), rows=SB.payDaRows(T,A.S,FH.H), F=A.S.dateFmt;
+  var h='<div class="muted sm">DA বেসিকের উপর আলাদা শতাংশ — বেসিক, ইনক্রিমেন্ট বা সার্ভিস বুকের পাতা এতে বদলায় না। DA-র হার “সেটিংস”-এর DA-র তালিকা থেকে আসে (নতুন DA সেখানে যোগ করুন)।</div>';
+  if(!rows.length) return h+'<div class="empty">DA-র তালিকা বা বেতনের তথ্য নেই।</div>';
+  var cur=rows[rows.length-1];
+  h+='<div class="card"><div class="sm">এখন ('+esc(SB.fmt(cur.from,F))+' থেকে)</div><div class="dabig">বেসিক '+SB.money(cur.basic)+' + DA '+cur.pct+'% ('+SB.money(cur.da)+') = <b>'+SB.money(cur.total)+'</b></div></div>';
+  h+='<div class="tw"><table class="dat"><thead><tr><th>কবে থেকে</th><th>কবে পর্যন্ত</th><th>বেসিক</th><th>DA %</th><th>DA-র টাকা</th><th>মোট</th></tr></thead><tbody>'+
+    rows.slice().reverse().map(function(r){ return '<tr><td>'+esc(SB.fmt(r.from,F))+'</td><td>'+esc(r.to?SB.fmt(r.to,F):'চলছে')+'</td><td>'+SB.money(r.basic)+'</td><td>'+r.pct+'%</td><td>'+SB.money(r.da)+'</td><td><b>'+SB.money(r.total)+'</b></td></tr>'; }).join('')+'</tbody></table></div>';
+  h+='<div class="muted sm">ROPA-2019 চালু হওয়ার আগের DA (ROPA-2009-এর %) এই তালিকায় নেই; দরকার হলে সেটিংসে যোগ করুন।</div>';
+  return h;
+}
+function importDA(file){
+  busy('ফাইল খুলছি…');
+  READER.read(file,prog).then(function(doc){ var R=READER.parse(doc); var found=[];
+    R.lines.forEach(function(l,ix){ var t=l.text+' '+((R.lines[ix+1]||{}).text||''); var m=/(?:@|at the rate of|rate of)?\s*(\d{1,3}(?:\.\d+)?)\s*%/i.exec(l.text); if(!m) return;
+      if(!/dearness|D\.?A\.?\b/i.test(t) && !/dearness/i.test(R.text)) return;
+      var ds=READER.dates(t); var wef=/(?:w\.?\s*e\.?\s*f\.?|with effect from)\s*:?\s*(\d{1,2}\s*[.\-\/]\s*\d{1,2}\s*[.\-\/]\s*\d{2,4})/i.exec(t); var d=wef?READER.dates(wef[1])[0]:ds[0];
+      if(d) found.push({from:d.iso, pct:+m[1]}); });
+    var seen={}; found=found.filter(function(f){ var k=f.from+'|'+f.pct; if(seen[k]) return false; seen[k]=1; return true; });
+    var gref=R.refs.filter(function(r){return /^(G|Memo|No)/i.test(r.kind);})[0];
+    IMP={da:found, go:gref?gref.text:''};
+    var h='<div class="dlgbox"><div class="dlgh"><b>DA-র অর্ডার থেকে যা পাওয়া গেল</b><button class="ib" data-act="closeD">✕</button></div><div class="dlgb">'+scanNote(R);
+    if(!found.length) h+='<div class="empty">DA-র % আর তারিখ একসঙ্গে খুঁজে পাওয়া যায়নি। নিচের লেখা দেখে “+ নতুন DA” দিয়ে নিজে বসান।</div>';
+    found.forEach(function(f,i){ h+='<div class="imrow"><label class="chk"><input type="checkbox" data-di="'+i+'"'+(i===0?' checked':'')+'></label><input type="date" data-dd="'+i+'" value="'+f.from+'"><input data-dp="'+i+'" value="'+f.pct+'"><input data-dg="'+i+'" value="'+esc(IMP.go)+'"></div>'; });
+    h+=rawBlock(R)+'</div><div class="dlgf"><button class="btn" data-act="closeD">বাতিল</button><button class="btn pri" data-act="applyDA">টিক দেওয়াগুলো যোগ করো</button></div></div>';
+    var d=$('#dlg'); d.innerHTML=h; d.classList.add('on');
+  }).catch(function(e){ closeDialog(); toast('পড়া যায়নি: '+(e&&e.message||e)); });
+}
+function applyDAImport(){ var d=$('#dlg'), n=0; A.S.da=A.S.da||[];
+  d.querySelectorAll('[data-di]').forEach(function(c){ if(!c.checked) return; var i=c.getAttribute('data-di'); var fr=d.querySelector('[data-dd="'+i+'"]').value, p=+d.querySelector('[data-dp="'+i+'"]').value;
+    if(!fr||isNaN(p)) return; var ex=A.S.da.filter(function(x){return x.from===fr;})[0]; if(ex){ ex.pct=p; ex.go=d.querySelector('[data-dg="'+i+'"]').value; } else A.S.da.push({from:fr,pct:p,go:d.querySelector('[data-dg="'+i+'"]').value}); n++; });
+  A.S.da.sort(function(a,b){return (a.from||'').localeCompare(b.from||'');}); closeDialog(); render(); scheduleSave('S'); toast(n+'টি DA বসানো হলো'); }
+
+
+// ---------- backup / restore ----------
+function doBackup(){
+  var d=new Date(), stamp=d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2);
+  var data={app:'service-book', version:1, saved:new Date().toISOString(), S:A.S, T:JSON.parse(JSON.stringify(A.T,function(k,v){return k.charAt(0)==='_'?undefined:v;}))};
+  saveFile('ServiceBook_backup_'+stamp+'.json', JSON.stringify(data));
+  A.lastBackup=SB.fmt(stamp,A.S.dateFmt); try{ localStorage.setItem('sbk_lastBackup',A.lastBackup); }catch(e){}
+}
+function doRestore(){
+  var inp=document.createElement('input'); inp.type='file'; inp.accept='.json,application/json'; inp.style.display='none'; document.body.appendChild(inp);
+  inp.onchange=function(){ var f=inp.files[0]; inp.remove(); if(!f) return; f.text().then(function(txt){
+    var data; try{ data=JSON.parse(txt); }catch(e){ toast('এটা ঠিক ব্যাকআপ ফাইল নয়'); return; }
+    if(!data || data.app!=='service-book' || !data.T){ toast('এটা সার্ভিস বুকের ব্যাকআপ ফাইল নয়'); return; }
+    var n=Object.keys(data.T).length, same=Object.keys(data.T).filter(function(k){return A.T[k];}).length;
+    ask('ব্যাকআপে '+n+' জন শিক্ষকের তথ্য আছে'+(same?' (এর মধ্যে '+same+' জন এখানেও আছেন — তাঁদের তথ্য ব্যাকআপেরটা দিয়ে বদলে যাবে)':'')+'। সেটিংস, DA আর পে-ম্যাট্রিক্সও ব্যাকআপ থেকে বসবে। তুলব?', function(){
+      if(data.S) A.S=SB.mergeSettings(data.S);
+      Object.keys(data.T).forEach(function(k){ var t=data.T[k]; t.id=k; A.T[k]=t; pendingNew[k]=1; });
+      render(); scheduleSave('S'); Object.keys(data.T).forEach(function(k){ scheduleSave('T',k); }); toast(n+' জন শিক্ষকের তথ্য তোলা হলো'); });
+  }); }; inp.click();
+}
+// ---------- standalone: offline install + auto update ----------
+if(STANDALONE){
+  try{ A.lastBackup=localStorage.getItem('sbk_lastBackup')||''; }catch(e){}
+  try{ if(navigator.storage && navigator.storage.persist) navigator.storage.persist(); }catch(e){}
+  if('serviceWorker' in navigator){
+    var hadCtl=!!navigator.serviceWorker.controller;
+    navigator.serviceWorker.register('sw.js').then(function(reg){
+      setInterval(function(){ reg.update().catch(function(){}); }, 60*60*1000);
+    }).catch(function(){});
+    navigator.serviceWorker.addEventListener('controllerchange',function(){
+      if(!hadCtl){ hadCtl=true; return; }
+      if(!$('#dlg').classList.contains('on')) location.reload(); else { A.updateReady=true; render(); }
+    });
+  }
+}
+
+var st=document.createElement('style'); st.textContent=BOOK.CSS; document.head.appendChild(st);
+init();
+})();
+</script>
+</body></html>
