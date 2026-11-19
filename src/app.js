@@ -415,7 +415,7 @@ function prepPays(R,T){
   P.slice().forEach(function(p){ if(p.kind!=='fix2009') return;
     // a row elsewhere with the same pay is this fixation's own line in the book (its column-5 date)
     var twin=P.filter(function(q){ return q!==p && !/fix/.test(q.kind) && q.pay===p.pay; })[0];
-    if(twin){ p.show=twin.date; p.end=twin.end||p.end; var pn=/\(([^)]*increment[^)]*)\)/i.exec(twin.line||''); if(pn) p.extra=pn[1]; P.splice(P.indexOf(twin),1); }
+    if(twin){ p.show=twin.date; p.end=twin.end||p.end; var pn=/\(([^)]*increment[^)]*)\)/i.exec(twin.line||''); if(pn) p.extra=pn[1]; if(twin.cellText) p.extra=twin.cellText.split(/\.\s+(?=[A-Z])/).map(function(x){ return x.replace(/\.$/,'').trim(); }).filter(Boolean).join('.\n')+'.'; P.splice(P.indexOf(twin),1); }
     var olds=[], after=P.filter(function(q){ return q!==p && q.date>=p.date; }); for(var k=0;k<after.length;k++){ if(after[k].pay<p.pay*0.6) olds.push(after[k]); else break; }
     if(!olds.length) return;
     var last=olds[olds.length-1].date, go=/G\.?\s*O\.?[^|]*?(?:dt|dated)\.?\s*(\d{1,2}\s*[.\-\/]\s*\d{1,2}\s*[.\-\/]\s*\d{2,4})/i.exec(p.line||''), gd=go?pdate(go[1]):'2009-02-27';
@@ -787,7 +787,9 @@ var FR={ recog:/recogni[sz]|\brecog\b|স্বীকৃ|upgrad|salary\s*deficit
   scale:/\b\d{3,5}\s*-\s*\d{2,4}\s*-\s*\d{3,5}\s*-|\bPB\s*-?\s*\d|pay\s*band|grade\s*pay|\bG\.?P\.?\b|\blevel\s*-?\s*\d|scale\s*of\s*pay|বেতনক্রম|বেতন\s*স্কেল/i,
   school:/institution|vidyalaya|vidyapith|vidyapeeth|vidyamandir|vidyaniketan|siksha|high\s*school|h\.?\s*s\.?\s*school|madrasah|\bschool\b|বিদ্যালয়|বিদ্যাপীঠ|বিদ্যামন্দির|শিক্ষা\s*নিকেতন|শিক্ষানিকেতন|মাদ্রাসা/i,
   kindw:/increment|incr\b|ropa|fixation|fixed|revis|10\s*y|ten\s*year|cas\b|career\s*adv|ইনক্রিমেন্ট|বৃদ্ধি|ফিক্স/i };
-function infoKey(L){ var m=/^([^:：|]{2,40})\s*[:：|]\s*(.+)$/.exec(L); if(!m) return null; var k=m[1].toLowerCase(), v=m[2].trim();
+function infoKey(L){ var m=/^([^:：|]{2,40}|[^:：|]{2,220}\d\.?\)?)\s*[:：|]\s*(.+)$/.exec(L); if(!m) return null; var k=m[1].toLowerCase(), v=m[2].trim();
+  if(/subsequent|improvement/.test(k)) return ['qualLater',v];
+  if(/at the time of entry/.test(k)) return ['qualEntry',v];
   if(/father|husband|পিতা|বাবা|স্বামী/.test(k)) return ['father',v];
   if(/birth|d\.?\s*o\.?\s*b|জন্ম/.test(k)) return ['dob',v];
   if(/^(?:full\s*)?name|^নাম|name of (?:the )?(?:employee|teacher)|শিক্ষকের নাম/.test(k)) return ['name',v];
@@ -898,8 +900,8 @@ function parseFree(lines){
     if(!dates.length || !pays.length) return false;
     var text=L;
     // the words in the first cells (post, school, recognition, notes, scale) go through the normal reader, without making pay rows
-    var rowDate=dates[0];
-    cells.slice(0,di).forEach(function(c,ci){ if(!c || /^(?:—|-|permanent|temporary|officiating|-do-|do)\b/i.test(c) && c.length<25) return;
+    var rowDate=dates[0], fixRow=/ropa|fixation|no\s+increment\s+given|no\s+arrear|date\s+of\s+fixation/i.test(cells.slice(0,di).join(' '));
+    cells.slice(0,fixRow?0:di).forEach(function(c,ci){ if(!c || /^(?:—|-|permanent|temporary|officiating|-do-|do)\b/i.test(c) && c.length<25) return;
       c.split(CELLSPLIT).forEach(function(sn){ sn=sn.replace(/^\d\.\s+/,'').trim(); if(sn) one(sn,{noPay:true, date:rowDate}); }); });
     var n=Math.min(dates.length, pays.length);
     if(pays.length>dates.length && dates.length===1) n=1;
@@ -908,7 +910,7 @@ function parseFree(lines){
       if(/ropa|fixation|\bfixed\b|revision/.test(kw) && r===0 && !/increment/.test(cells.slice(0,di).join(' ').toLowerCase()) && /ropa|fix/i.test(cells.slice(0,di).join(' ')+cells[pi])) kd='fix';
       if(r>0 && dates[r]===dates[r-1]) kd='benefit';
       if(cur && !cur.date && kd!=='fix') cur.date=dates[r];
-      R.pays.push({date:dates[r], pay:pays[r], kind:kd, line:text, end:ends[r]||(n===1?ends[0]:'')||''});
+      R.pays.push({date:dates[r], pay:pays[r], kind:kd, line:text, end:ends[r]||(n===1?ends[0]:'')||'', cellText:fixRow&&kd!=='fix'?cells[0]:''});
       lastDate=dates[r]; }
     return true; }
   lines.forEach(function(L){ if(!rowLine(L)) one(L); });
