@@ -34,7 +34,7 @@ header .tl{display:flex;align-items:center;gap:8px;min-width:0}header .sch{font-
 h3{margin:22px 0 4px}h4{margin:14px 0 6px}.okbox{background:#e8f5e9;border:1px solid #b7dfbb;border-radius:10px;padding:10px 12px;font-size:13px;color:#1f5e25;margin-bottom:10px}.chk{display:flex;align-items:center;gap:8px;margin:8px 0;flex-wrap:wrap}.chk input[type=checkbox]{width:20px;height:20px}.imv{flex:1;min-width:140px;font:inherit;padding:7px 8px;border:1px solid #cfc9bc;border-radius:8px}.chk small{width:100%;padding-left:28px;color:#777}.imrow{display:grid;grid-template-columns:28px 1fr 1fr 1fr;gap:6px;align-items:center;margin:8px 0;border-bottom:1px dashed #e3ded2;padding-bottom:6px}.imrow input,.imrow select{font:inherit;font-size:14px;padding:6px;border:1px solid #cfc9bc;border-radius:6px;min-width:0}.imrow small{grid-column:1/-1;font-size:11.5px}.dabig{font-size:16px;margin-top:4px}.tw{overflow-x:auto}.dat{border-collapse:collapse;width:100%;font-size:13.5px;background:#fff}.dat th,.dat td{border:1px solid #e1ddd3;padding:7px 6px;text-align:right;white-space:nowrap}.dat th{background:#f7f5ef;text-align:center}.darow{display:grid;grid-template-columns:1fr 1fr;gap:0 10px}.darow .f:nth-child(3){grid-column:1/-1}.todobox{background:#fff8e1;border:1px solid #f0d58a;border-radius:10px;padding:10px 12px;margin-bottom:10px;font-size:14px;color:#5a4300}.todobox ul{margin:6px 0 0;padding-left:18px}.todobox li{margin:6px 0}.imsch{grid-column:2/-1;font:inherit;font-size:14px;padding:6px;border:1px solid #e0b94d;border-radius:6px;background:#fffdf3}.scard summary{cursor:pointer;padding:2px 0}.scard[open] summary{margin-bottom:6px}.g2{display:grid;grid-template-columns:1fr 1fr;gap:0 10px}@media(max-width:420px){.g2{grid-template-columns:1fr}}.ptab td{vertical-align:top}.ptab input,.ptab select{font:inherit;font-size:13.5px;padding:5px;border:1px solid #cfc9bc;border-radius:6px;width:100%;min-width:90px}.ptab tr.bad td{background:#fdecea}details{margin:12px 0}summary{cursor:pointer;color:#1f3b73}
 #pagesWrap{margin-top:10px}.pfit{overflow:hidden;margin:0 auto 12px;box-shadow:0 1px 4px rgba(0,0,0,.25)}
 #toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:#222;color:#fff;padding:10px 16px;border-radius:20px;font-size:14px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:30;max-width:90vw}#toast.on{opacity:1}
-</style></head><body><div id="app"></div><script>window.SB_STANDALONE=true;window.SB_VERSION="19-11-2026 21:05 (b14447)";</script><div id="dlg"></div><div id="toast"></div>
+</style></head><body><div id="app"></div><script>window.SB_STANDALONE=true;window.SB_VERSION="19-11-2026 21:27 (3dcbf0)";</script><div id="dlg"></div><div id="toast"></div>
 <script>// ===== Service Book core logic (pure, no DOM) =====
 var SB = (function(){
 'use strict';
@@ -604,7 +604,7 @@ var CSS=[
 'table.bt th{border:1px solid #222;font-family:Arial,sans-serif;font-weight:400;font-size:9px;line-height:1.15;padding:3px 2px;vertical-align:middle;text-align:center;height:120px}',
 'table.bt.lv th{height:auto;font-size:8.5px}table.bt tr.num th{height:16px;font-size:9px}',
 'table.bt td.cl{border-left:1px solid #222;border-right:1px solid #222;padding:0;vertical-align:top}',
-'table.bt tr.ru{background-image:repeating-linear-gradient(to bottom,transparent 0,transparent '+(RH-1)+'px,#9a9a9a '+(RH-1)+'px,#9a9a9a '+RH+'px)}',
+'table.bt tr.ru{-webkit-print-color-adjust:exact;print-color-adjust:exact;background-image:repeating-linear-gradient(to bottom,transparent 0,transparent '+(RH-1)+'px,#9a9a9a '+(RH-1)+'px,#9a9a9a '+RH+'px)}',
 'table.bt tbody tr:last-child td{border-bottom:1px solid #222}',
 '.ent{font-family:"Roboto Condensed","Arial Narrow",Arial,sans-serif;font-size:11px;line-height:'+LH+'px;color:#1b3a9a;white-space:pre;padding:1px 3px 0;overflow:hidden}',
 '.ent.ctr{text-align:center}.ent.box{font-weight:700}'
@@ -999,6 +999,10 @@ function saveFile(name,data){
   return A.dl.save({filename:name,data:data}).then(function(){ toast('ফাইল সেভ হয়েছে'); }).catch(function(e){ if(e&&e.code==='declined') return; toast('ডাউনলোড হয়নি: '+(e&&e.code||e)); });
 }
 function fileName(T,ext){ return 'ServiceBook_'+String(T.name||'teacher').replace(/[^A-Za-z0-9]+/g,'_')+'.'+ext; }
+// the ruled lines of each row are a CSS pattern that the PDF maker cannot draw: put real 1px lines there instead
+function drawRules(pg){ if(!pg || !pg.querySelectorAll) return; var pr=pg.getBoundingClientRect(), RH=40;
+  pg.querySelectorAll('tr.ru').forEach(function(tr){ var r=tr.getBoundingClientRect(), top=r.top-pr.top, h=r.height;
+    for(var y=RH; y<=h+0.5; y+=RH){ var d=document.createElement('div'); d.style.cssText='position:absolute;left:'+(r.left-pr.left)+'px;width:'+r.width+'px;top:'+(top+y-1)+'px;height:1px;background:#9a9a9a;pointer-events:none'; pg.appendChild(d); } }); }
 function exportPdf(){
   var T=A.T[A.tid]; toast('PDF তৈরি হচ্ছে… একটু সময় লাগবে');
   Promise.all([window.html2canvas?1:loadScript(new URL('vendor/html2canvas.min.js',location.href).href), (window.jspdf?1:loadScript(new URL('vendor/jspdf.umd.min.js',location.href).href))])
@@ -1007,7 +1011,7 @@ function exportPdf(){
     var res=BOOK.allPages(T,A.S); var host=document.createElement('div'); host.style.cssText='position:fixed;left:-10000px;top:0;width:794px'; document.body.appendChild(host);
     var pdf=new window.jspdf.jsPDF({unit:'pt',format:'a4',compress:true}); var i=0;
     function next(){ if(i>=res.pages.length){ document.body.removeChild(host); return saveFile(fileName(T,'pdf'),pdf.output('blob')); }
-      host.innerHTML=res.pages[i]; return window.html2canvas(host.firstChild,{scale:2,backgroundColor:'#ffffff',logging:false}).then(function(cv){
+      host.innerHTML=res.pages[i]; drawRules(host.firstChild); return window.html2canvas(host.firstChild,{scale:2,backgroundColor:'#ffffff',logging:false}).then(function(cv){
         if(i>0) pdf.addPage(); pdf.addImage(cv.toDataURL('image/jpeg',0.92),'JPEG',0,0,595.28,841.89); i++; return next(); }); }
     return next();
   }).catch(function(e){ toast('PDF তৈরি হয়নি: '+(e&&e.message||e)); });

@@ -257,6 +257,10 @@ function saveFile(name,data){
   return A.dl.save({filename:name,data:data}).then(function(){ toast('ফাইল সেভ হয়েছে'); }).catch(function(e){ if(e&&e.code==='declined') return; toast('ডাউনলোড হয়নি: '+(e&&e.code||e)); });
 }
 function fileName(T,ext){ return 'ServiceBook_'+String(T.name||'teacher').replace(/[^A-Za-z0-9]+/g,'_')+'.'+ext; }
+// the ruled lines of each row are a CSS pattern that the PDF maker cannot draw: put real 1px lines there instead
+function drawRules(pg){ if(!pg || !pg.querySelectorAll) return; var pr=pg.getBoundingClientRect(), RH=40;
+  pg.querySelectorAll('tr.ru').forEach(function(tr){ var r=tr.getBoundingClientRect(), top=r.top-pr.top, h=r.height;
+    for(var y=RH; y<=h+0.5; y+=RH){ var d=document.createElement('div'); d.style.cssText='position:absolute;left:'+(r.left-pr.left)+'px;width:'+r.width+'px;top:'+(top+y-1)+'px;height:1px;background:#9a9a9a;pointer-events:none'; pg.appendChild(d); } }); }
 function exportPdf(){
   var T=A.T[A.tid]; toast('PDF তৈরি হচ্ছে… একটু সময় লাগবে');
   Promise.all([window.html2canvas?1:loadScript(new URL('vendor/html2canvas.min.js',location.href).href), (window.jspdf?1:loadScript(new URL('vendor/jspdf.umd.min.js',location.href).href))])
@@ -265,7 +269,7 @@ function exportPdf(){
     var res=BOOK.allPages(T,A.S); var host=document.createElement('div'); host.style.cssText='position:fixed;left:-10000px;top:0;width:794px'; document.body.appendChild(host);
     var pdf=new window.jspdf.jsPDF({unit:'pt',format:'a4',compress:true}); var i=0;
     function next(){ if(i>=res.pages.length){ document.body.removeChild(host); return saveFile(fileName(T,'pdf'),pdf.output('blob')); }
-      host.innerHTML=res.pages[i]; return window.html2canvas(host.firstChild,{scale:2,backgroundColor:'#ffffff',logging:false}).then(function(cv){
+      host.innerHTML=res.pages[i]; drawRules(host.firstChild); return window.html2canvas(host.firstChild,{scale:2,backgroundColor:'#ffffff',logging:false}).then(function(cv){
         if(i>0) pdf.addPage(); pdf.addImage(cv.toDataURL('image/jpeg',0.92),'JPEG',0,0,595.28,841.89); i++; return next(); }); }
     return next();
   }).catch(function(e){ toast('PDF তৈরি হয়নি: '+(e&&e.message||e)); });

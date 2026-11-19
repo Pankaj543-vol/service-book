@@ -197,7 +197,7 @@ var CSS=[
 'table.bt th{border:1px solid #222;font-family:Arial,sans-serif;font-weight:400;font-size:9px;line-height:1.15;padding:3px 2px;vertical-align:middle;text-align:center;height:120px}',
 'table.bt.lv th{height:auto;font-size:8.5px}table.bt tr.num th{height:16px;font-size:9px}',
 'table.bt td.cl{border-left:1px solid #222;border-right:1px solid #222;padding:0;vertical-align:top}',
-'table.bt tr.ru{background-image:repeating-linear-gradient(to bottom,transparent 0,transparent '+(RH-1)+'px,#9a9a9a '+(RH-1)+'px,#9a9a9a '+RH+'px)}',
+'table.bt tr.ru{-webkit-print-color-adjust:exact;print-color-adjust:exact;background-image:repeating-linear-gradient(to bottom,transparent 0,transparent '+(RH-1)+'px,#9a9a9a '+(RH-1)+'px,#9a9a9a '+RH+'px)}',
 'table.bt tbody tr:last-child td{border-bottom:1px solid #222}',
 '.ent{font-family:"Roboto Condensed","Arial Narrow",Arial,sans-serif;font-size:11px;line-height:'+LH+'px;color:#1b3a9a;white-space:pre;padding:1px 3px 0;overflow:hidden}',
 '.ent.ctr{text-align:center}.ent.box{font-weight:700}'
