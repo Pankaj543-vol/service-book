@@ -408,8 +408,13 @@ function drawTeacherImport(){
         '<small class="muted">'+(p.sus?'<b class="flag">⚠ আগের সারির চেয়ে অনেক কম — সম্ভবত গ্রেড পে বা ভুল পড়া, তাই টিক তুলে রাখা হলো। </b>':'')+(p.auto?'<b>'+esc(p.auto)+'। </b>':'')+(ex?'আগে থেকে আছে · ':'')+esc((p.line||'').slice(0,90))+'</small></div>'; });
     h+='<div class="muted sm">নতুন স্কুলে যোগ দেওয়ার সারিটা “যোগদান (নতুন স্কুল)” করে দিন — না হলে বেতনের হিসাব ভুল মিলবে।</div>'; }
   if(R.pays.length && !(T.events||[]).some(function(e){return e.type==='join';}) && !R.pays.some(function(p){return p.kind==='join';})) h+='<div class="flagbox">এই শিক্ষকের “স্কুলে যোগদান” এখনও দেওয়া হয়নি। সারিগুলো যোগ হবে, কিন্তু বেতনের হিসাব মেলানোর জন্য পরে যোগদানটা দিয়ে দিন।</div>';
+  if(R.schools && R.schools.length){ h+='<h4>স্কুল ('+R.schools.length+'টি)</h4><div class="muted sm">একই তারিখের যোগদানের সারিতে স্কুলের নাম, ঠিকানা, বেতনক্রম আর স্বীকৃতির লাইন বসবে।</div>';
+    R.schools.forEach(function(s,i){ h+='<label class="chk"><input type="checkbox" data-sc="'+i+'" checked> <span><b>'+esc(s.date?SB.fmt(s.date,A.S.dateFmt):'তারিখ নেই')+'</b> — '+esc(s.post)+'<br>'+esc(s.school).replace(/\n/g,' ')+(s.scale?'<br><small>বেতনক্রম: '+esc(s.scale)+'</small>':'')+(s.recog.length?'<br><small>স্বীকৃতি: '+s.recog.length+' লাইন</small>':'')+'</span></label>'; }); }
+  if(R.notes && R.notes.length){ h+='<h4>বয়ান / নোট ('+R.notes.length+'টি)</h4><div class="muted sm">হুবহু তারিখ অনুযায়ী বইয়ের পাতায় বসবে। “permanent” লেখা থাকলে পরের সারিগুলো Permanent হবে।</div>';
+    R.notes.forEach(function(n,i){ h+='<label class="chk"><input type="checkbox" data-nt="'+i+'"'+(n.date?' checked':'')+'> <span>'+esc(n.date?SB.fmt(n.date,A.S.dateFmt):'তারিখ নেই (টিক দিলে বসবে না)')+': '+esc(n.text.slice(0,160))+'</span></label>'; }); }
+  if(R.releases && R.releases.length){ h+='<h4>স্কুল ছাড়া ('+R.releases.length+'টি)</h4>'; R.releases.forEach(function(r,i){ h+='<label class="chk"><input type="checkbox" data-rl="'+i+'" checked> <span>'+esc(SB.fmt(r.date,A.S.dateFmt))+': '+esc(r.reason)+'</span></label>'; }); }
   if(R.leave && R.leave.length){ h+='<h4>নেওয়া ছুটি ('+R.leave.length+'টি সারি)</h4>'; R.leave.forEach(function(l,i){ h+='<label class="chk"><input type="checkbox" data-lv="'+i+'" checked> <span>'+esc(SB.fmt(l.from,A.S.dateFmt))+(l.to?' – '+esc(SB.fmt(l.to,A.S.dateFmt)):'')+': M.C. '+(+l.mlTaken||0)+' দিন'+(+l.hapTaken?', H.A.P. '+(+l.hapTaken)+' দিন':'')+'</span></label>'; }); h+='<div class="muted sm">ছুটির হিসাবের যে বছরের মধ্যে এই তারিখ পড়ে, সেই বছরে বসবে।</div>'; }
-  if(!keys.length && !R.pays.length) h+='<div class="empty">কাজের মতো তারিখ-বেতন কিছু খুঁজে পাওয়া যায়নি। নিচের পুরো লেখাটা দেখে নিজে বসাতে পারেন।</div>';
+  if(!keys.length && !R.pays.length && !(R.schools&&R.schools.length) && !(R.notes&&R.notes.length)) h+='<div class="empty">কাজের মতো তারিখ-বেতন কিছু খুঁজে পাওয়া যায়নি। নিচের পুরো লেখাটা দেখে নিজে বসাতে পারেন।</div>';
   h+=refsBlock(R)+rawBlock(R)+'</div><div class="dlgf"><button class="btn" data-act="closeD">বাতিল</button><button class="btn pri" data-act="applyT">টিক দেওয়াগুলো যোগ করো</button></div></div>';
   var d=$('#dlg'); d.innerHTML=h; d.classList.add('on');
 }
@@ -429,12 +434,23 @@ function applyTeacherImport(){
     if(e.type==='fix'){ e.commission=guessComm(date)||'ROPA-2019'; var keepPay=e.pay, keepDate=e.date; applyComm(e); e.pay=keepPay; e.date=keepDate;
       if(e.method==='matrix'){ var pn=+pay, lv=A.S.levels.filter(function(L){ return L.cells.indexOf(pn)>=0; }); var lc=lv.filter(function(L){return L.commission===e.commission;}); var pick=(lc[0]||lv[0]); if(pick) e.level=pick.id; else if(!e.level) e.level=(A.S.levels[0]||{}).id; } }
     T.events.push(e); have[date]=e; nNew++; });
+  var nExtra=0;
+  if(R.schools){ d.querySelectorAll('[data-sc]').forEach(function(c){ if(!c.checked) return; var s=R.schools[+c.getAttribute('data-sc')];
+      var j=T.events.filter(function(e){ return e.type==='join' && s.date && e.date===s.date; })[0];
+      if(!j && s.date){ j={id:uid(), seq:Date.now()+nExtra, type:'join', date:s.date, sys:s.date>='2016-01-01'?((A.S.levels[0]||{}).id||'2009'):(s.date>='2006-01-01'?'2009':'manual'), postStatus:'Temporary', apptStatus:'Temporary'}; T.events.push(j); }
+      if(!j) return; if(s.post) j.post=s.post; if(s.school) j.school=s.school; if(s.scale) j.scale=s.scale; if(s.recog.length) j.recog=s.recog.join('\n'); nExtra++; }); }
+  if(R.notes){ d.querySelectorAll('[data-nt]').forEach(function(c){ if(!c.checked) return; var n=R.notes[+c.getAttribute('data-nt')]; if(!n.date) return;
+      if(/permanent/i.test(n.text) && /post|service|retain|confirm|appoint/i.test(n.text)) T.events.push({id:uid(), seq:Date.now()+nExtra, type:'status', date:n.date, which:/post/i.test(n.text)&&!/service/i.test(n.text)?'post':'both', newStatus:'Permanent', text:n.text});
+      else T.events.push({id:uid(), seq:Date.now()+nExtra, type:'note', date:n.date, textL:n.text, fromL:'3'}); nExtra++; }); }
+  if(R.releases){ d.querySelectorAll('[data-rl]').forEach(function(c){ if(!c.checked) return; var r=R.releases[+c.getAttribute('data-rl')];
+      if(T.events.some(function(e){ return (e.type==='release'||e.type==='resign') && e.date===r.date; })) return;
+      T.events.push(/resign/i.test(r.reason)?{id:uid(), seq:Date.now()+nExtra, type:'resign', date:r.date, reason:r.reason}:{id:uid(), seq:Date.now()+nExtra, type:'release', date:r.date, reason:r.reason}); nExtra++; }); }
   var nLv=0; if(R.leave){ T.leave=T.leave||{ov:{},notes:{}}; T.leave.ov=T.leave.ov||{}; var FH=SB.fullHistory(T,A.S);
     d.querySelectorAll('[data-lv]').forEach(function(c){ if(!c.checked) return; var l=R.leave[+c.getAttribute('data-lv')];
       var per=FH.LV.rows.filter(function(r){ return r.kind==='leave' && r.from<=l.from && r.to>=l.from; })[0]; if(!per) return;
       var o=T.leave.ov[per.key]=T.leave.ov[per.key]||{}; if(+l.mlTaken) o.t7=String((+o.t7||0)+(+l.mlTaken)); if(+l.hapTaken) o.t8=String((+o.t8||0)+(+l.hapTaken)); nLv++; }); }
   closeDialog(); A.tab='events'; render(); scheduleSave('T',A.tid);
-  toast('যোগ হলো: তথ্য '+nInfo+', নতুন সারি '+nNew+', বেতন বসানো '+nUpd+(nLv?', ছুটি '+nLv:''));
+  toast('যোগ হলো: তথ্য '+nInfo+', নতুন সারি '+nNew+', বেতন বসানো '+nUpd+(nExtra?', স্কুল/বয়ান '+nExtra:'')+(nLv?', ছুটি '+nLv:''));
 }
 
 function importGO(file){
@@ -657,10 +673,14 @@ function aiImportTeacher(file){
 
 // ---------- paste from Gemini app (no key needed) ----------
 var PASTE_PROMPT='এই ছবিগুলো পশ্চিমবঙ্গের এক শিক্ষকের হাতে লেখা সার্ভিস বুকের পাতা। হাতের লেখা মন দিয়ে পড়ে নিচের ধাঁচে, শুধু এই লাইনগুলো লেখো (অন্য কোনো কথা লিখবে না):\n\n'+
- 'NAME: (নাম, ইংরেজিতে যেমন লেখা)\nDOB: DD-MM-YYYY\nFATHER: (বাবা/স্বামীর নাম)\nHEIGHT: \nMARK: (শনাক্তকরণ চিহ্ন)\nQUAL: (যোগ্যতা)\n'+
+ 'NAME: (নাম, ইংরেজিতে যেমন লেখা)\nDOB: DD-MM-YYYY\nFATHER: (বাবা/স্বামীর নাম)\nRESIDENCE: (ঠিকানা)\nHEIGHT: \nMARK: (শনাক্তকরণ চিহ্ন)\nQUAL: (যোগ্যতা)\n'+
+ 'SCHOOL: যোগদানের তারিখ DD-MM-YYYY | পদ | স্কুলের নাম ও পুরো ঠিকানা (এক লাইনে, কমা দিয়ে) | বেতনক্রম (কলম 2-এ যা লেখা)\n'+
+ 'RECOG: (ঠিক আগের SCHOOL-এর কলম 1-এর নিচে লেখা স্কুলের স্বীকৃতির প্রতিটা লাইন, একটা করে)\n'+
+ 'NOTE: DD-MM-YYYY | কলম 3–7 বা পুরো পাতা জুড়ে লেখা প্রতিটা বয়ান হুবহু (নিয়োগ, অনুমোদন, পদ স্থায়ী হওয়া, ফিক্সেশনের নোট, ভেরিফিকেশন সার্টিফিকেট ইত্যাদি)\n'+
+ 'RELEASE: DD-MM-YYYY | স্কুল ছাড়ার কারণ যেমন লেখা (Resignation / Transferred … / Released)\n'+
  'ROW: DD-MM-YYYY | বেতন (শুধু সংখ্যা) | Join / Increment / ROPA / 10yr / Other | স্কুলের নাম বা পাশে লেখা কথা\n'+
  'LEAVE: DD-MM-YYYY | মেডিক্যাল ছুটি কত দিন | হাফ-পে ছুটি কত দিন\nREF: (G.O./মেমো নম্বর ও তারিখ, যেমন লেখা)\n\n'+
- 'নিয়ম: History of Service-এর প্রতিটা তারিখ-বেতনের লাইনের জন্য একটা করে ROW (কলম 5-এর তারিখ, কলম 6-এর মোট বেতন)। গ্রেড পে (যেমন 4800) বা স্কেলের সংখ্যা (যেমন 9000-40500) কখনো বেতন হিসেবে লিখবে না। প্রথম স্কুলের প্রথম লাইন আর যেখানে কলম 1-এ নতুন স্কুলের নাম শুরু হয়েছে সেই লাইন Join, পাশে স্কুলের নাম। Increment লেখা লাইন Increment। ROPA/ফিক্সেশনের লাইন ROPA। ১০ বছর পূর্তির লাইন 10yr। একই তারিখ-বেতন দুবার লিখবে না। Leave Account-এ যে বছরে ছুটি নেওয়া হয়েছে শুধু সেগুলোর জন্য LEAVE। প্রতিটা G.O./মেমো নম্বরের জন্য একটা REF। যেটা পড়া যাচ্ছে না সেটা বাদ দাও, আন্দাজে লিখবে না। সই ও স্ট্যাম্প বাদ দাও।';
+ 'নিয়ম: History of Service-এর প্রতিটা তারিখ-বেতনের লাইনের জন্য একটা করে ROW (কলম 5-এর তারিখ, কলম 6-এর মোট বেতন)। গ্রেড পে (যেমন 4800) বা স্কেলের সংখ্যা (যেমন 9000-40500) কখনো বেতন হিসেবে লিখবে না। প্রথম স্কুলের প্রথম লাইন আর যেখানে কলম 1-এ নতুন স্কুলের নাম শুরু হয়েছে সেই লাইন Join, পাশে স্কুলের নাম। Increment লেখা লাইন Increment। ROPA/ফিক্সেশনের লাইন ROPA। ১০ বছর পূর্তির লাইন 10yr। একই তারিখ-বেতন দুবার লিখবে না। Leave Account-এ যে বছরে ছুটি নেওয়া হয়েছে শুধু সেগুলোর জন্য LEAVE। প্রতিটা স্কুলের জন্য একটা SCHOOL, তার নিচে RECOG লাইনগুলো। প্রতিটা G.O./মেমো নম্বরের জন্য একটা REF। যেটা পড়া যাচ্ছে না সেটা বাদ দাও, আন্দাজে লিখবে না। সই ও স্ট্যাম্প বাদ দাও।';
 function pdate(s){ var d=READER.dates(String(s||'')); return d.length?d[0].iso:''; }
 function kindWord(s){ s=String(s||'').toLowerCase();
   if(/join|যোগ|appoint/.test(s)) return 'join'; if(/ropa|fix|revis|ফিক্স/.test(s)) return 'fix';
@@ -678,7 +698,12 @@ function parsePasted(txt){
     (j.refs||[]).forEach(function(x){ if(typeof x==='string'&&x.trim()) R.refs.push({kind:'ref',text:x.trim()}); });
   } else {
     t.split('\n').forEach(function(line){ var L=line.replace(/^[\s*\-•>#`]+/,'').replace(/\*\*/g,'').trim(); if(!L) return;
-      var m=/^(NAME|DOB|FATHER|HEIGHT|MARK|QUAL|ROW|LEAVE|REF)\s*[:：\-]\s*(.*)$/i.exec(L); if(!m) return; var k=m[1].toUpperCase(), v=m[2].trim(); if(!v) return;
+      var m=/^(NAME|DOB|FATHER|RESIDENCE|HEIGHT|MARK|QUAL|ROW|LEAVE|REF|SCHOOL|RECOG|NOTE|RELEASE)\s*[:：\-]\s*(.*)$/i.exec(L); if(!m) return; var k=m[1].toUpperCase(), v=m[2].trim(); if(!v) return;
+      if(k==='RESIDENCE'){ R.info.residence=v; return; }
+      if(k==='SCHOOL'){ var s=v.split('|').map(function(x){return x.trim();}); var sd=pdate(s[0]); R.schools=R.schools||[]; R.schools.push({date:sd, post:s[1]||'', school:(s[2]||'').replace(/\s*,\s*/g,',\n').replace(/,\n(?=[^\n]*$)/,',\n'), scale:s[3]||'', recog:[]}); return; }
+      if(k==='RECOG'){ R.schools=R.schools||[]; if(!R.schools.length) R.schools.push({date:'',post:'',school:'',scale:'',recog:[]}); R.schools[R.schools.length-1].recog.push(v); return; }
+      if(k==='NOTE'){ var nn=v.split('|'); var nd=pdate(nn[0]); var nt=(nd?nn.slice(1):nn).join('|').trim(); if(nt){ R.notes=R.notes||[]; R.notes.push({date:nd, text:nt}); } return; }
+      if(k==='RELEASE'){ var rr=v.split('|').map(function(x){return x.trim();}); var rd=pdate(rr[0]); if(rd){ R.releases=R.releases||[]; R.releases.push({date:rd, reason:rr.slice(1).join(' | ')||'Released'}); } return; }
       if(k==='NAME') R.info.name=v; else if(k==='FATHER') R.info.father=v; else if(k==='HEIGHT') R.info.height=v; else if(k==='MARK') R.info.idMarks=v; else if(k==='QUAL') R.info.qualEntry=v;
       else if(k==='DOB'){ var d=pdate(v); if(d) R.info.dob=d; }
       else if(k==='REF') R.refs.push({kind:'ref',text:v});
