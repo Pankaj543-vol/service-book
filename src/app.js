@@ -157,7 +157,7 @@ function schema(type){
 function eventsView(T){
   var H=SB.fullHistory(T,A.S).H, h='';
   if(H.flags.length) h+='<div class="flagbox"><b>⚠ হিসাবের সঙ্গে মিলছে না — মূল অর্ডার দেখে নিন:</b><ul>'+H.flags.map(function(f){return '<li>'+esc(f.msg)+'</li>';}).join('')+'</ul></div>';
-  h+='<div class="row gap wrap"><button class="btn pri" data-act="autoFill">✍ আজ পর্যন্ত লিখে দাও</button><button class="btn" data-act="addE">+ নতুন ঘটনা</button><button class="btn" data-act="genInc">১ জুলাইয়ের ইনক্রিমেন্টগুলো নিজে বসাও</button><button class="btn" data-act="readT">📄 PDF/ছবি থেকে পড়ো</button></div>';
+  h+='<div class="row gap wrap"><button class="btn pri" data-act="autoFill">✍ আজ পর্যন্ত লিখে দাও</button><button class="btn" data-act="addE">+ নতুন ঘটনা</button><button class="btn" data-act="genInc">১ জুলাইয়ের ইনক্রিমেন্টগুলো নিজে বসাও</button><button class="btn" data-act="readT">📄 PDF/ছবি থেকে পড়ো</button>'+(STANDALONE?'<button class="btn" data-act="readAI">🤖 AI দিয়ে পড়ো (হাতের লেখা)</button>':'')+'</div>';
   var evs=SB.sortEvents(T.events||[]);
   if(!evs.length) h+='<div class="empty">প্রথমে “স্কুলে যোগদান” ঘটনা যোগ করুন।</div>';
   var rowsBy={}; H.rows.forEach(function(r){ if(r.ev) (rowsBy[r.ev]=rowsBy[r.ev]||[]).push(r); });
@@ -278,6 +278,7 @@ function settingsView(){
   fld('বছরে মেডিক্যাল ছুটি পাওনা','leave.mc',S.leave.mc,'number')+fld('বছরে হাফ-পে ছুটি পাওনা','leave.hap',S.leave.hap,'number')+fld('হাফ-পে ছুটি সর্বোচ্চ জমা','leave.hapCap',S.leave.hapCap,'number')+
   fld('পাতা নম্বর: প্রথম পাতা','pages.part',S.pages.part,'number')+fld('পাতা নম্বর: আঙুলের ছাপ','pages.finger',S.pages.finger,'number')+fld('পাতা নম্বর: History of Service শুরু','pages.hist',S.pages.hist,'number')+fld('পাতা নম্বর: Leave Account শুরু','pages.leave',S.pages.leave,'number')+
   fld('প্রতি পাতায় দাগের সংখ্যা','lines',S.lines,'number','বইয়ের পাতার সঙ্গে মেলাতে বদলান (১৬–২৪)')+'</div>';
+  if(STANDALONE) h+='<h3>AI (Gemini) key</h3><div class="muted sm">হাতের লেখা পড়ার জন্য। '+(gk()?'key রাখা আছে।':'এখনও key দেওয়া হয়নি।')+'</div><button class="btn sm2" data-act="gemKeyChange">key দিন / বদলান</button>';
   h+='<h3>DA-র তালিকা</h3><div class="muted sm">সবার জন্য একই। নতুন DA ঘোষণা হলে যেকোনো তারিখে, যেকোনো % যোগ করুন — বছরে যতবার খুশি। এটা শুধু “৫. বেতন ও DA” পাতায় কাজে লাগে; সার্ভিস বুকের পাতা বদলায় না।</div>';
   (S.da||[]).forEach(function(x,i){ h+='<div class="card form darow" data-form="D" data-i="'+i+'">'+fld('কবে থেকে','from',x.from,'date')+fld('DA %','pct',x.pct,'number')+fld('G.O./মেমো','go',x.go)+'<button class="btn sm2 danger" data-act="delD" data-i="'+i+'">মুছুন</button></div>'; });
   h+='<div class="row gap wrap"><button class="btn" data-act="addD">+ নতুন DA</button><button class="btn" data-act="readDA">📄 DA-র G.O. PDF থেকে পড়ো</button></div>';
@@ -332,6 +333,8 @@ document.addEventListener('click',function(ev){
   else if(act==='addC'){ A.S.commissions.push({name:'New Pay Commission', method:'matrix', factor:'', incPct:3, cellRound:100, date:'', actualFrom:'', go:''}); render(); scheduleSave('S'); }
   else if(act==='delC'){ var ci=+b.getAttribute('data-i'); ask('এই পে কমিশন মুছবেন?',function(){ A.S.commissions.splice(ci,1); render(); scheduleSave('S'); }); }
   else if(act==='readT'){ pickFile(importTeacher); }
+  else if(act==='readAI'){ if(!gk()) askGemKey(function(){ pickFile(aiImportTeacher); }); else pickFile(aiImportTeacher); }
+  else if(act==='gemKeyChange'){ askGemKey(function(){ toast('নতুন key রাখা হল'); }); }
   else if(act==='readGO'){ pickFile(importGO); }
   else if(act==='copyTxt'){ var tx=b.getAttribute('data-txt')||($('#rawtxt')||{}).value||''; try{ navigator.clipboard.writeText(tx).then(function(){ toast('কপি হয়েছে'); },function(){ toast('কপি হয়নি — লেখাটা লম্বা চেপে কপি করুন'); }); }catch(e){ toast('কপি হয়নি'); } }
   else if(act==='applyT'){ applyTeacherImport(); }
@@ -362,7 +365,8 @@ function pickFile(cb){ var inp=document.createElement('input'); inp.type='file';
   inp.onchange=function(){ var f=inp.files[0]; document.body.removeChild(inp); if(f) cb(f); }; inp.click(); }
 function busy(msg){ var d=$('#dlg'); d.innerHTML='<div class="dlgbox small"><div class="dlgb"><p><b>পড়ছি…</b></p><p id="busymsg" class="muted sm">'+esc(msg||'')+'</p><p class="muted sm">বড় PDF বা ছবিতে ১–২ মিনিট লাগতে পারে। প্রথমবার লেখা চেনার ফাইল (প্রায় ৭ MB) লোড হয়।</p></div></div>'; d.classList.add('on'); }
 function prog(m){ var el=$('#busymsg'); if(el) el.textContent=m; }
-function scanNote(R){ if(!R.scanned.length) return '<div class="okbox">এটা টাইপ করা PDF — লেখা সরাসরি পড়া গেছে, ভুলের সম্ভাবনা কম।</div>';
+function scanNote(R){ if(R.ai) return '<div class="flagbox">AI (Gemini) হাতের লেখা পড়েছে। বেশিরভাগ ঠিক আসে, তবে ১০০% নয় — যোগ করার আগে প্রতিটা তারিখ, বেতন আর নম্বর বইয়ের সঙ্গে মিলিয়ে নিন। ভুল থাকলে ঘরেই ঠিক করে দিন।</div>';
+  if(!R.scanned.length) return '<div class="okbox">এটা টাইপ করা PDF — লেখা সরাসরি পড়া গেছে, ভুলের সম্ভাবনা কম।</div>';
   return '<div class="flagbox">পাতা '+R.scanned.join(', ')+' স্ক্যান করা ছবি — অ্যাপ নিজে লেখা চিনেছে (OCR)'+(R.conf!=null?', গড় নিশ্চয়তা '+R.conf+'%':'')+'। ছাপা লেখা মোটামুটি ঠিক আসে, <b>হাতের লেখা প্রায়ই ভুল পড়ে বা পড়তেই পারে না</b>। যোগ করার আগে প্রতিটা সংখ্যা মিলিয়ে নিন।</div>'; }
 function rawBlock(R){ return '<details><summary>পুরো পড়া লেখা দেখুন / কপি করুন</summary><textarea id="rawtxt" rows="10" readonly style="width:100%;font-size:12px">'+esc(R.text)+'</textarea><button class="btn sm2" data-act="copyTxt">সব কপি</button></details>'; }
 function refsBlock(R){ if(!R.refs.length) return ''; return '<h4>পাওয়া G.O./মেমো নম্বর (টিপলে কপি হবে)</h4>'+R.refs.slice(0,30).map(function(r){ return '<button class="btn sm2 block" data-act="copyTxt" data-txt="'+esc(r.text)+'">'+esc(r.text)+'</button>'; }).join(''); }
@@ -383,7 +387,8 @@ function drawTeacherImport(){
     R.pays.forEach(function(p,i){ var ex=have[p.date];
       h+='<div class="imrow"><label class="chk"><input type="checkbox" data-pi="'+i+'" checked></label><input type="date" data-pd="'+i+'" value="'+p.date+'"><select data-pk="'+i+'">'+[['inc','ইনক্রিমেন্ট'],['fix','পে-রিভিশন'],['benefit','১০ বছর/CAS'],['payrow','অন্য সারি'],['join','যোগদান']].map(function(o){ return '<option value="'+o[0]+'"'+(o[0]===p.kind?' selected':'')+'>'+o[1]+'</option>'; }).join('')+'</select><input data-pp="'+i+'" inputmode="numeric" value="'+p.pay+'">'+
         '<small class="muted">'+(ex?'আগে থেকে আছে · ':'')+esc(p.line.slice(0,90))+'</small></div>'; }); }
-  if(R.pays.length && !(T.events||[]).some(function(e){return e.type==='join';})) h+='<div class="flagbox">এই শিক্ষকের “স্কুলে যোগদান” এখনও দেওয়া হয়নি। সারিগুলো যোগ হবে, কিন্তু বেতনের হিসাব মেলানোর জন্য পরে যোগদানটা দিয়ে দিন।</div>';
+  if(R.pays.length && !(T.events||[]).some(function(e){return e.type==='join';}) && !R.pays.some(function(p){return p.kind==='join';})) h+='<div class="flagbox">এই শিক্ষকের “স্কুলে যোগদান” এখনও দেওয়া হয়নি। সারিগুলো যোগ হবে, কিন্তু বেতনের হিসাব মেলানোর জন্য পরে যোগদানটা দিয়ে দিন।</div>';
+  if(R.leave && R.leave.length){ h+='<h4>নেওয়া ছুটি ('+R.leave.length+'টি সারি)</h4>'; R.leave.forEach(function(l,i){ h+='<label class="chk"><input type="checkbox" data-lv="'+i+'" checked> <span>'+esc(SB.fmt(l.from,A.S.dateFmt))+(l.to?' – '+esc(SB.fmt(l.to,A.S.dateFmt)):'')+': M.C. '+(+l.mlTaken||0)+' দিন'+(+l.hapTaken?', H.A.P. '+(+l.hapTaken)+' দিন':'')+'</span></label>'; }); h+='<div class="muted sm">ছুটির হিসাবের যে বছরের মধ্যে এই তারিখ পড়ে, সেই বছরে বসবে।</div>'; }
   if(!keys.length && !R.pays.length) h+='<div class="empty">কাজের মতো তারিখ-বেতন কিছু খুঁজে পাওয়া যায়নি। নিচের পুরো লেখাটা দেখে নিজে বসাতে পারেন।</div>';
   h+=refsBlock(R)+rawBlock(R)+'</div><div class="dlgf"><button class="btn" data-act="closeD">বাতিল</button><button class="btn pri" data-act="applyT">টিক দেওয়াগুলো যোগ করো</button></div></div>';
   var d=$('#dlg'); d.innerHTML=h; d.classList.add('on');
@@ -398,12 +403,17 @@ function applyTeacherImport(){
     if(!date) return; var ex=have[date];
     if(ex){ ex.pay=pay; nUpd++; return; }
     var e={id:uid(), seq:Date.now()+nNew, type:k, date:date, pay:pay};
-    if(k==='join'){ e.type='join'; e.post='Assistant Teacher'; e.school='(স্কুলের নাম ও ঠিকানা লিখুন)'; e.sys=date>='2016-01-01'?((A.S.levels[0]||{}).id||'2009'):(date>='2006-01-01'?'2009':'manual'); e.postStatus='Temporary'; e.apptStatus='Temporary'; hasJoin=true; }
+    var pr0=R.pays[+i]||{};
+    if(k==='join'){ e.type='join'; e.post='Assistant Teacher'; e.school=pr0.school||'(স্কুলের নাম ও ঠিকানা লিখুন)'; e.sys=date>='2016-01-01'?((A.S.levels[0]||{}).id||'2009'):(date>='2006-01-01'?'2009':'manual'); e.postStatus='Temporary'; e.apptStatus='Temporary'; hasJoin=true; }
     if(e.type==='fix'){ e.commission=guessComm(date)||'ROPA-2019'; var keepPay=e.pay, keepDate=e.date; applyComm(e); e.pay=keepPay; e.date=keepDate;
       if(e.method==='matrix'){ var pn=+pay, lv=A.S.levels.filter(function(L){ return L.cells.indexOf(pn)>=0; }); var lc=lv.filter(function(L){return L.commission===e.commission;}); var pick=(lc[0]||lv[0]); if(pick) e.level=pick.id; else if(!e.level) e.level=(A.S.levels[0]||{}).id; } }
     T.events.push(e); have[date]=e; nNew++; });
+  var nLv=0; if(R.leave){ T.leave=T.leave||{ov:{},notes:{}}; T.leave.ov=T.leave.ov||{}; var FH=SB.fullHistory(T,A.S);
+    d.querySelectorAll('[data-lv]').forEach(function(c){ if(!c.checked) return; var l=R.leave[+c.getAttribute('data-lv')];
+      var per=FH.LV.rows.filter(function(r){ return r.kind==='leave' && r.from<=l.from && r.to>=l.from; })[0]; if(!per) return;
+      var o=T.leave.ov[per.key]=T.leave.ov[per.key]||{}; if(+l.mlTaken) o.t7=String((+o.t7||0)+(+l.mlTaken)); if(+l.hapTaken) o.t8=String((+o.t8||0)+(+l.hapTaken)); nLv++; }); }
   closeDialog(); A.tab='events'; render(); scheduleSave('T',A.tid);
-  toast('যোগ হলো: তথ্য '+nInfo+', নতুন সারি '+nNew+', বেতন বসানো '+nUpd);
+  toast('যোগ হলো: তথ্য '+nInfo+', নতুন সারি '+nNew+', বেতন বসানো '+nUpd+(nLv?', ছুটি '+nLv:''));
 }
 
 function importGO(file){
@@ -546,6 +556,80 @@ if(STANDALONE){
       if(!$('#dlg').classList.contains('on')) location.reload(); else { A.updateReady=true; render(); }
     });
   }
+}
+
+// ---------- AI reading (Google Gemini, the person's own free key; standalone app only) ----------
+var GEMBASE='https://generativelanguage.googleapis.com/v1beta/';
+function gk(){ try{ return (localStorage.getItem('gemKey')||'').trim(); }catch(e){ return ''; } }
+function gkSet(v){ try{ localStorage.setItem('gemKey',v); localStorage.removeItem('gemModel'); }catch(e){} }
+var GEMMSG={g_bad_key:'Gemini key ঠিক নয়। aistudio.google.com থেকে key আবার কপি করে বসান।', g_quota:'Google-এর ফ্রি সীমা এখন শেষ। কিছুক্ষণ পরে বা কাল আবার চেষ্টা করুন।',
+  g_denied:'Google এই key দিয়ে ব্যবহার করতে দিচ্ছে না। AI Studio-তে নতুন key বানিয়ে দেখুন।', g_http:'Gemini থেকে ঠিকমতো উত্তর এল না। একটু পরে আবার চেষ্টা করুন।', offline:'ইন্টারনেট নেই। AI দিয়ে পড়ার জন্য ইন্টারনেট লাগবে।', g_json:'Gemini-র উত্তর বোঝা গেল না। আবার চেষ্টা করুন।'};
+function gemErr(r){ return r.json().catch(function(){return {};}).then(function(j){ var m=(j.error&&j.error.message)||'', d=JSON.stringify((j.error&&j.error.details)||'');
+  if((r.status===400&&/API_KEY_INVALID|API key not valid|expired/i.test(m+d))||r.status===401) return {code:'g_bad_key'};
+  if(r.status===429||/RESOURCE_EXHAUSTED|quota/i.test(m)) return {code:'g_quota'}; if(r.status===403) return {code:'g_denied'}; return {code:'g_http',message:m}; }); }
+function gemModel(key){
+  var c=''; try{ c=localStorage.getItem('gemModel')||''; }catch(e){} if(c) return Promise.resolve(c);
+  return fetch(GEMBASE+'models?pageSize=200',{headers:{'x-goog-api-key':key}}).catch(function(){ throw {code:'offline'}; }).then(function(r){
+    if(!r.ok) return gemErr(r).then(function(e){ throw e; });
+    return r.json().then(function(j){ var ver=function(n){ var x=String(n).match(/gemini-(\d+(?:\.\d+)?)/); return x?+x[1]:0; };
+      var ok=(j.models||[]).filter(function(m){ return (m.supportedGenerationMethods||[]).indexOf('generateContent')>=0 && /flash/.test(m.name) && !/lite|image|tts|live|audio|embed|exp|8b/.test(m.name); })
+        .sort(function(a,b){ return ((/preview/.test(a.name))-(/preview/.test(b.name))) || ver(b.name)-ver(a.name); });
+      var name=(ok[0]&&ok[0].name)||'models/gemini-2.5-flash'; try{ localStorage.setItem('gemModel',name); }catch(e){} return name; }); }); }
+var AI_PROMPT='These are photos/scans of pages of a West Bengal (India) school teacher\'s handwritten SERVICE BOOK (or service-related orders). Read the handwriting carefully and return ONLY JSON with this shape:\n'+
+ '{"info":{"name":"","dob":"YYYY-MM-DD","father":"","residence":"","height":"","idMarks":"","qualEntry":"","qualLater":""},'+
+ '"rows":[{"date":"YYYY-MM-DD","pay":0,"kind":"join|inc|fix|benefit|payrow|release|resign","school":"","text":""}],'+
+ '"leave":[{"from":"YYYY-MM-DD","to":"YYYY-MM-DD","mlTaken":0,"hapTaken":0}],"refs":[""]}\n'+
+ 'Rules: rows = every dated pay entry in the History of Service (date of appointment/increment = column 5, pay = column 6 as a plain number). kind: join = first joining at a school (put school name+address in "school"), inc = annual increment, fix = pay fixation/ROPA revision, benefit = 10-year/CAS benefit, payrow = any other pay line, release/resign = leaving a school. "text" = the reason/notes written for that row, copied as written. leave = Leave Account rows with medical leave (M.C.) days taken (col 7) and half-pay days taken (col 8), 0 if none. refs = every G.O./memo/resolution number with its date, copied exactly. Dates written like 24.1.08 mean 2008-01-24 (day.month.year). Use "" or omit fields you cannot read; never guess. Ignore signatures and stamps.';
+function gemAsk(key,model,imgs){
+  var parts=imgs.map(function(b){ return {inline_data:{mime_type:'image/jpeg',data:b}}; }); parts.push({text:AI_PROMPT});
+  var v=(String(model).match(/gemini-(\d+(?:\.\d+)?)/)||[])[1], n=v?+v:0; var gc={temperature:0,maxOutputTokens:16000,responseMimeType:'application/json'};
+  if(n>=3) gc.thinkingConfig={thinkingLevel:'low'}; else if(n>=2.5) gc.thinkingConfig={thinkingBudget:1024};
+  function call(cfg){ return fetch(GEMBASE+model+':generateContent',{method:'POST',headers:{'content-type':'application/json','x-goog-api-key':key},body:JSON.stringify({contents:[{role:'user',parts:parts}],generationConfig:cfg})}).catch(function(){ throw {code:'offline'}; }); }
+  return call(gc).then(function(r){ if(r.status===400 && gc.thinkingConfig){ var g2=Object.assign({},gc); delete g2.thinkingConfig; return call(g2); } return r; })
+  .then(function(r){ if(!r.ok) return gemErr(r).then(function(e){ if(r.status===404){ try{ localStorage.removeItem('gemModel'); }catch(x){} } throw e; });
+    return r.json(); }).then(function(j){ var t=((((j.candidates||[])[0]||{}).content||{}).parts||[]).map(function(p){return p.text||'';}).join('');
+    t=t.replace(/^```(?:json)?\s*/,'').replace(/```\s*$/,''); try{ return JSON.parse(t); }catch(e){ var m=/\{[\s\S]*\}/.exec(t); if(m){ try{ return JSON.parse(m[0]); }catch(e2){} } throw {code:'g_json'}; } });
+}
+function fileImages(file,progress){
+  function canvasB64(cv){ return cv.toDataURL('image/jpeg',0.85).split(',')[1]; }
+  if(/pdf$/i.test(file.type)||/\.pdf$/i.test(file.name)){
+    return READER.ensurePdf().then(function(){ return file.arrayBuffer(); }).then(function(buf){ return window.pdfjsLib.getDocument({data:buf}).promise; }).then(function(pdf){
+      var out=[], i=0; function next(){ i++; if(i>pdf.numPages) return out; progress('পাতা '+i+'/'+pdf.numPages+' তৈরি করছি…');
+        return pdf.getPage(i).then(function(pg){ var v1=pg.getViewport({scale:1}), sc=1800/Math.max(v1.width,v1.height), v=pg.getViewport({scale:sc}); var cv=document.createElement('canvas'); cv.width=v.width; cv.height=v.height;
+          return pg.render({canvasContext:cv.getContext('2d'),viewport:v}).promise.then(function(){ out.push(canvasB64(cv)); return next(); }); }); }
+      return next(); }); }
+  return new Promise(function(ok,no){ var img=new Image(); img.onload=function(){ var s=Math.min(1,1800/Math.max(img.width,img.height)); var cv=document.createElement('canvas'); cv.width=img.width*s; cv.height=img.height*s; cv.getContext('2d').drawImage(img,0,0,cv.width,cv.height); ok([canvasB64(cv)]); }; img.onerror=function(){ no(new Error('ছবি খোলা যায়নি')); }; img.src=URL.createObjectURL(file); });
+}
+function askGemKey(then){
+  var d=$('#dlg'); d.innerHTML='<div class="dlgbox"><div class="dlgh"><b>Gemini key দিন (একবারই)</b><button class="ib" data-act="closeD">✕</button></div><div class="dlgb">'+
+   '<p class="sm">হাতের লেখা পড়ার জন্য Google-এর ফ্রি Gemini লাগে। Pankaj Question Maker-এ যে key দিয়েছিলেন সেটাই দিলে চলবে।</p>'+
+   '<ol class="sm"><li>নতুন key লাগলে <b>aistudio.google.com/apikey</b> খুলে Google অ্যাকাউন্টে ঢুকুন।</li><li><b>Create API key</b> চাপুন, তারপর <b>AQ.</b> বা <b>AIza</b> দিয়ে শুরু লম্বা লেখাটা কপি করুন।</li><li>নিচের ঘরে পেস্ট করে <b>রাখুন</b> চাপুন।</li></ol>'+
+   '<input id="gkIn" class="imv" style="width:100%" type="password" placeholder="AQ.… বা AIza…" autocomplete="off"><p class="muted sm">key শুধু এই যন্ত্রে থাকে।</p></div>'+
+   '<div class="dlgf"><button class="btn" data-act="closeD">বাতিল</button><button class="btn pri" id="gkSave">রাখুন</button></div></div>'; d.classList.add('on');
+  $('#gkSave').onclick=function(){ var v=$('#gkIn').value.trim(); if(!/^(AIza[0-9A-Za-z_\-]{20,}|AQ\.[0-9A-Za-z_\-.]{20,})$/.test(v)){ toast('এটা Gemini key মনে হচ্ছে না। key শুরু হয় AQ. বা AIza দিয়ে।'); return; } gkSet(v); closeDialog(); then(); };
+}
+function aiImportTeacher(file){
+  var key=gk(); if(!key){ askGemKey(function(){ aiImportTeacher(file); }); return; }
+  busy('ফাইল খুলছি…');
+  var model;
+  fileImages(file,prog).then(function(imgs){
+    return gemModel(key).then(function(m){ model=m;
+      var batches=[]; for(var i=0;i<imgs.length;i+=4) batches.push(imgs.slice(i,i+4)); var res=[], k=0;
+      function next(){ if(k>=batches.length) return res; prog('AI পড়ছে: '+(k*4+1)+'–'+Math.min(imgs.length,k*4+batches[k].length)+' / '+imgs.length+' পাতা… (প্রতি দফায় ১–২ মিনিট লাগতে পারে)');
+        return gemAsk(key,model,batches[k]).then(function(j){ res.push(j); k++; return next(); }); }
+      return next(); }); })
+  .then(function(list){
+    var R={info:{}, pays:[], refs:[], scanned:[], conf:null, ai:true, leave:[], text:''};
+    var ik=['name','dob','father','residence','height','idMarks','qualEntry','qualLater'];
+    list.forEach(function(j){ var inf=j.info||{}; ik.forEach(function(k){ var v=inf[k]; if(v && !R.info[k]){ if(k==='dob' && !/^\d{4}-\d{2}-\d{2}$/.test(v)) return; R.info[k]=String(v).trim(); } });
+      (j.rows||[]).forEach(function(r){ if(!r || !/^\d{4}-\d{2}-\d{2}$/.test(r.date||'')) return; var p=+String(r.pay||'').replace(/[^0-9.]/g,''); if(!p) return;
+        R.pays.push({date:r.date, pay:Math.round(p), kind:/^(join|inc|fix|benefit|payrow|release|resign)$/.test(r.kind)?r.kind:'inc', school:r.school||'', note:r.text||'', line:(r.text||'')+(r.school?' — '+r.school:'')}); });
+      (j.leave||[]).forEach(function(l){ if(l && /^\d{4}-\d{2}-\d{2}$/.test(l.from||'') && (+l.mlTaken||+l.hapTaken) && !R.leave.some(function(x){ return x.from===l.from && +x.mlTaken===+l.mlTaken && +x.hapTaken===+l.hapTaken; })) R.leave.push(l); });
+      (j.refs||[]).forEach(function(t){ if(t && typeof t==='string') R.refs.push({kind:'ref', text:t.trim()}); }); });
+    var seen={}; R.pays=R.pays.filter(function(p){ var k=p.date+'|'+p.pay; if(seen[k]) return false; seen[k]=1; return true; }).sort(function(a,b){ return a.date.localeCompare(b.date); });
+    R.pays.forEach(function(p){ if(p.kind==='release'||p.kind==='resign') p.kind='payrow'; });
+    R.text=JSON.stringify(list,null,1); IMP={R:R}; drawTeacherImport();
+  }).catch(function(e){ closeDialog(); var c=e&&e.code; toast(GEMMSG[c]||('AI দিয়ে পড়া যায়নি: '+(e&&(e.message||e.code)||e))); });
 }
 
 var st=document.createElement('style'); st.textContent=BOOK.CSS; document.head.appendChild(st);

@@ -121,5 +121,5 @@ function matrixCols(doc){
   });
   return out;
 }
-return {read:read, parse:parse, dates:dates, amounts:amounts, toLines:toLines};
+return {ensurePdf:ensurePdf, read:read, parse:parse, dates:dates, amounts:amounts, toLines:toLines};
 })();
