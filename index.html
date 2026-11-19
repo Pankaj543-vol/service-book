@@ -894,7 +894,7 @@ function schema(type){
 function eventsView(T){
   var H=SB.fullHistory(T,A.S).H, h='';
   if(H.flags.length) h+='<div class="flagbox"><b>⚠ হিসাবের সঙ্গে মিলছে না — মূল অর্ডার দেখে নিন:</b><ul>'+H.flags.map(function(f){return '<li>'+esc(f.msg)+'</li>';}).join('')+'</ul></div>';
-  h+='<div class="row gap wrap"><button class="btn pri" data-act="autoFill">✍ আজ পর্যন্ত লিখে দাও</button><button class="btn" data-act="addE">+ নতুন ঘটনা</button><button class="btn" data-act="genInc">১ জুলাইয়ের ইনক্রিমেন্টগুলো নিজে বসাও</button><button class="btn" data-act="readT">📄 PDF/ছবি থেকে পড়ো</button>'+(STANDALONE?'<button class="btn" data-act="readAI">🤖 AI দিয়ে পড়ো (হাতের লেখা)</button>':'')+'</div>';
+  h+='<div class="row gap wrap"><button class="btn pri" data-act="autoFill">✍ আজ পর্যন্ত লিখে দাও</button><button class="btn" data-act="addE">+ নতুন ঘটনা</button><button class="btn" data-act="genInc">১ জুলাইয়ের ইনক্রিমেন্টগুলো নিজে বসাও</button><button class="btn" data-act="readT">📄 PDF/ছবি থেকে পড়ো</button><button class="btn" data-act="pasteG">✎ Gemini থেকে পেস্ট করুন</button>'+(STANDALONE?'<button class="btn" data-act="readAI">🤖 AI দিয়ে পড়ো (হাতের লেখা)</button>':'')+'</div>';
   var evs=SB.sortEvents(T.events||[]);
   if(!evs.length) h+='<div class="empty">প্রথমে “স্কুলে যোগদান” ঘটনা যোগ করুন।</div>';
   var rowsBy={}; H.rows.forEach(function(r){ if(r.ev) (rowsBy[r.ev]=rowsBy[r.ev]||[]).push(r); });
@@ -1070,6 +1070,7 @@ document.addEventListener('click',function(ev){
   else if(act==='addC'){ A.S.commissions.push({name:'New Pay Commission', method:'matrix', factor:'', incPct:3, cellRound:100, date:'', actualFrom:'', go:''}); render(); scheduleSave('S'); }
   else if(act==='delC'){ var ci=+b.getAttribute('data-i'); ask('এই পে কমিশন মুছবেন?',function(){ A.S.commissions.splice(ci,1); render(); scheduleSave('S'); }); }
   else if(act==='readT'){ pickFile(importTeacher); }
+  else if(act==='pasteG'){ pasteDialog(); }
   else if(act==='readAI'){ if(!gk()) askGemKey(function(){ pickFile(aiImportTeacher); }); else pickFile(aiImportTeacher); }
   else if(act==='gemKeyChange'){ askGemKey(function(){ toast('নতুন key রাখা হল'); }); }
   else if(act==='readGO'){ pickFile(importGO); }
@@ -1102,7 +1103,7 @@ function pickFile(cb){ var inp=document.createElement('input'); inp.type='file';
   inp.onchange=function(){ var f=inp.files[0]; document.body.removeChild(inp); if(f) cb(f); }; inp.click(); }
 function busy(msg){ var d=$('#dlg'); d.innerHTML='<div class="dlgbox small"><div class="dlgb"><p><b>পড়ছি…</b></p><p id="busymsg" class="muted sm">'+esc(msg||'')+'</p><p class="muted sm">বড় PDF বা ছবিতে ১–২ মিনিট লাগতে পারে। প্রথমবার লেখা চেনার ফাইল (প্রায় ৭ MB) লোড হয়।</p></div></div>'; d.classList.add('on'); }
 function prog(m){ var el=$('#busymsg'); if(el) el.textContent=m; }
-function scanNote(R){ if(R.ai) return '<div class="flagbox">AI (Gemini) হাতের লেখা পড়েছে। বেশিরভাগ ঠিক আসে, তবে ১০০% নয় — যোগ করার আগে প্রতিটা তারিখ, বেতন আর নম্বর বইয়ের সঙ্গে মিলিয়ে নিন। ভুল থাকলে ঘরেই ঠিক করে দিন।</div>';
+function scanNote(R){ if(R.ai) return '<div class="flagbox">'+(R.pasted?'Gemini-র লেখা থেকে নেওয়া।':'AI (Gemini) হাতের লেখা পড়েছে।')+' বেশিরভাগ ঠিক আসে, তবে ১০০% নয় — যোগ করার আগে প্রতিটা তারিখ, বেতন আর নম্বর বইয়ের সঙ্গে মিলিয়ে নিন। ভুল থাকলে ঘরেই ঠিক করে দিন।</div>';
   if(!R.scanned.length) return '<div class="okbox">এটা টাইপ করা PDF — লেখা সরাসরি পড়া গেছে, ভুলের সম্ভাবনা কম।</div>';
   return '<div class="flagbox">পাতা '+R.scanned.join(', ')+' স্ক্যান করা ছবি — অ্যাপ নিজে লেখা চিনেছে (OCR)'+(R.conf!=null?', গড় নিশ্চয়তা '+R.conf+'%':'')+'। ছাপা লেখা মোটামুটি ঠিক আসে, <b>হাতের লেখা প্রায়ই ভুল পড়ে বা পড়তেই পারে না</b>। যোগ করার আগে প্রতিটা সংখ্যা মিলিয়ে নিন।</div>'; }
 function rawBlock(R){ return '<details><summary>পুরো পড়া লেখা দেখুন / কপি করুন</summary><textarea id="rawtxt" rows="10" readonly style="width:100%;font-size:12px">'+esc(R.text)+'</textarea><button class="btn sm2" data-act="copyTxt">সব কপি</button></details>'; }
@@ -1367,6 +1368,57 @@ function aiImportTeacher(file){
     R.pays.forEach(function(p){ if(p.kind==='release'||p.kind==='resign') p.kind='payrow'; });
     R.text=JSON.stringify(list,null,1); IMP={R:R}; drawTeacherImport();
   }).catch(function(e){ closeDialog(); var c=e&&e.code; toast(GEMMSG[c]||('AI দিয়ে পড়া যায়নি: '+(e&&(e.message||e.code)||e))); });
+}
+
+// ---------- paste from Gemini app (no key needed) ----------
+var PASTE_PROMPT='এই ছবিগুলো পশ্চিমবঙ্গের এক শিক্ষকের হাতে লেখা সার্ভিস বুকের পাতা। হাতের লেখা মন দিয়ে পড়ে নিচের ধাঁচে, শুধু এই লাইনগুলো লেখো (অন্য কোনো কথা লিখবে না):\n\n'+
+ 'NAME: (নাম, ইংরেজিতে যেমন লেখা)\nDOB: DD-MM-YYYY\nFATHER: (বাবা/স্বামীর নাম)\nHEIGHT: \nMARK: (শনাক্তকরণ চিহ্ন)\nQUAL: (যোগ্যতা)\n'+
+ 'ROW: DD-MM-YYYY | বেতন (শুধু সংখ্যা) | Join / Increment / ROPA / 10yr / Other | স্কুলের নাম বা পাশে লেখা কথা\n'+
+ 'LEAVE: DD-MM-YYYY | মেডিক্যাল ছুটি কত দিন | হাফ-পে ছুটি কত দিন\nREF: (G.O./মেমো নম্বর ও তারিখ, যেমন লেখা)\n\n'+
+ 'নিয়ম: History of Service-এর প্রতিটা তারিখ-বেতনের লাইনের জন্য একটা করে ROW (কলম 5-এর তারিখ, কলম 6-এর বেতন)। নতুন স্কুলে যোগদান হলে Join আর পাশে স্কুলের নাম। Leave Account-এ যে বছরে ছুটি নেওয়া হয়েছে শুধু সেগুলোর জন্য LEAVE। প্রতিটা G.O./মেমো নম্বরের জন্য একটা REF। যেটা পড়া যাচ্ছে না সেটা বাদ দাও, আন্দাজে লিখবে না। সই ও স্ট্যাম্প বাদ দাও।';
+function pdate(s){ var d=READER.dates(String(s||'')); return d.length?d[0].iso:''; }
+function kindWord(s){ s=String(s||'').toLowerCase();
+  if(/join|যোগ|appoint/.test(s)) return 'join'; if(/ropa|fix|revis|ফিক্স/.test(s)) return 'fix';
+  if(/10|cas|benefit|সুবিধা/.test(s)) return 'benefit'; if(/incr|ইনক্রি/.test(s)) return 'inc'; return /other|অন্য/.test(s)?'payrow':'inc'; }
+function parsePasted(txt){
+  var R={info:{}, pays:[], refs:[], scanned:[], conf:null, ai:true, pasted:true, leave:[], text:txt};
+  var t=String(txt||'').replace(/\r/g,'');
+  // JSON (if Gemini answered in JSON)
+  var mj=/\{[\s\S]*\}/.exec(t), j=null; if(mj){ try{ j=JSON.parse(mj[0]); }catch(e){} }
+  if(j && (j.rows||j.info)){
+    var inf=j.info||{}; ['name','dob','father','residence','height','idMarks','qualEntry','qualLater'].forEach(function(k){ if(inf[k]) R.info[k]=k==='dob'?(pdate(inf[k])||(/^\d{4}-\d{2}-\d{2}$/.test(inf[k])?inf[k]:'')):String(inf[k]); });
+    if(!R.info.dob) delete R.info.dob;
+    (j.rows||[]).forEach(function(r){ var d=/^\d{4}-\d{2}-\d{2}$/.test(r.date||'')?r.date:pdate(r.date); var p=+String(r.pay||'').replace(/[^0-9.]/g,''); if(d&&p) R.pays.push({date:d,pay:Math.round(p),kind:kindWord(r.kind),school:r.school||'',line:(r.text||'')+(r.school?' — '+r.school:'')}); });
+    (j.leave||[]).forEach(function(l){ var d=/^\d{4}-\d{2}-\d{2}$/.test(l.from||'')?l.from:pdate(l.from); if(d&&(+l.mlTaken||+l.hapTaken)) R.leave.push({from:d,mlTaken:+l.mlTaken||0,hapTaken:+l.hapTaken||0}); });
+    (j.refs||[]).forEach(function(x){ if(typeof x==='string'&&x.trim()) R.refs.push({kind:'ref',text:x.trim()}); });
+  } else {
+    t.split('\n').forEach(function(line){ var L=line.replace(/^[\s*\-•>#`]+/,'').replace(/\*\*/g,'').trim(); if(!L) return;
+      var m=/^(NAME|DOB|FATHER|HEIGHT|MARK|QUAL|ROW|LEAVE|REF)\s*[:：\-]\s*(.*)$/i.exec(L); if(!m) return; var k=m[1].toUpperCase(), v=m[2].trim(); if(!v) return;
+      if(k==='NAME') R.info.name=v; else if(k==='FATHER') R.info.father=v; else if(k==='HEIGHT') R.info.height=v; else if(k==='MARK') R.info.idMarks=v; else if(k==='QUAL') R.info.qualEntry=v;
+      else if(k==='DOB'){ var d=pdate(v); if(d) R.info.dob=d; }
+      else if(k==='REF') R.refs.push({kind:'ref',text:v});
+      else if(k==='ROW'){ var c=v.split('|').map(function(x){return x.trim();}); var d2=pdate(c[0]); var p=+String(c[1]||'').replace(/[^0-9.]/g,''); if(d2&&p) R.pays.push({date:d2,pay:Math.round(p),kind:kindWord(c[2]),school:kindWord(c[2])==='join'?(c[3]||''):'',line:(c[2]||'')+(c[3]?' — '+c[3]:'')}); }
+      else if(k==='LEAVE'){ var c2=v.split('|').map(function(x){return x.trim();}); var d3=pdate(c2[0]); var ml=+String(c2[1]||'').replace(/[^0-9]/g,'')||0, hp=+String(c2[2]||'').replace(/[^0-9]/g,'')||0; if(d3&&(ml||hp)) R.leave.push({from:d3,mlTaken:ml,hapTaken:hp}); }
+    });
+    if(!R.pays.length && !Object.keys(R.info).length){ // ordinary typed text: look for dates with amounts
+      var items=t.split('\n').map(function(s,i){ return {t:s, x:0, y:i*20, w:100, h:10, page:1}; });
+      var G=READER.parse({pages:[{page:1,items:items}],scanned:[]}); G.ai=true; G.pasted=true; G.leave=[]; G.text=t; return G; }
+  }
+  var seen={}; R.pays=R.pays.filter(function(p){ var k=p.date+'|'+p.pay; if(seen[k]) return false; seen[k]=1; return true; }).sort(function(a,b){return a.date.localeCompare(b.date);});
+  return R;
+}
+window.__parsePasted=parsePasted;
+function pasteDialog(){
+  var d=$('#dlg'); d.innerHTML='<div class="dlgbox"><div class="dlgh"><b>Gemini থেকে পেস্ট করুন</b><button class="ib" data-act="closeD">✕</button></div><div class="dlgb">'+
+   '<ol class="sm"><li>নিচের <b>নির্দেশ কপি করুন</b> চাপুন।</li><li>ফোনের <b>Gemini</b> অ্যাপ খুলে সার্ভিস বুকের পাতার ছবি দিন (একসঙ্গে কয়েকটা দেওয়া যায়), তারপর কপি করা নির্দেশটা পেস্ট করে পাঠান।</li>'+
+   '<li>Gemini উত্তর লিখলে তার নিচের <b>কপি</b> চিহ্ন চাপুন।</li><li>এখানে নিচের ঘরে পেস্ট করে <b>পড়ো</b> চাপুন। বাকি পাতাগুলোর জন্য আবার একইভাবে করবেন।</li></ol>'+
+   '<button class="btn sm2" id="cpPrompt">📋 নির্দেশ কপি করুন</button>'+
+   '<details><summary>নির্দেশটা দেখুন (কপি না হলে এখান থেকে লম্বা চেপে কপি করুন)</summary><textarea readonly rows="8" style="width:100%;font-size:12px">'+esc(PASTE_PROMPT)+'</textarea></details>'+
+   '<label class="f form"><span>Gemini-র উত্তর এখানে পেস্ট করুন</span><textarea id="pasteIn" rows="9" placeholder="NAME: …&#10;DOB: …&#10;ROW: …"></textarea></label></div>'+
+   '<div class="dlgf"><button class="btn" data-act="closeD">বাতিল</button><button class="btn pri" id="pasteGo">পড়ো</button></div></div>';
+  d.classList.add('on');
+  $('#cpPrompt').onclick=function(){ try{ navigator.clipboard.writeText(PASTE_PROMPT).then(function(){ toast('নির্দেশ কপি হয়েছে — এবার Gemini-তে পেস্ট করুন'); },function(){ toast('কপি হয়নি — নিচের “নির্দেশটা দেখুন” থেকে কপি করুন'); }); }catch(e){ toast('কপি হয়নি — নিচের “নির্দেশটা দেখুন” থেকে কপি করুন'); } };
+  $('#pasteGo').onclick=function(){ var v=$('#pasteIn').value; if(!v.trim()){ toast('আগে Gemini-র উত্তর পেস্ট করুন'); return; } IMP={R:parsePasted(v)}; drawTeacherImport(); };
 }
 
 var st=document.createElement('style'); st.textContent=BOOK.CSS; document.head.appendChild(st);
