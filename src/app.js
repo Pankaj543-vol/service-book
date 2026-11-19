@@ -771,7 +771,8 @@ function parseFree(lines){
       var mN=ml?+ml[1]:0, hN=hp?+hp[1]:0; if(mN||hN){ R.leave.push({from:d0, mlTaken:mN, hapTaken:hN}); return; } }
     if(FR.release.test(L) && d0 && !FR.kindw.test(L)){ R.releases.push({date:d0, reason:L.replace(/\b\d{1,2}\s*[.\-\/]\s*\d{1,2}\s*[.\-\/]\s*\d{2,4}\b/g,' ').replace(/\s{2,}/g,' ').replace(/^[\s|:,\-–]+/,'').replace(/[\s,|]*(?:w\.?\s*e\.?\s*f\.?|on|from|dated|dt\.?)?[\s,.|]*$/i,'').trim()||'Released'}); return; }
     var pay=freePay(L);
-    var isSchool=FR.school.test(L) && !/\bschools\b|district inspector|D\.?\s*I\.?\s*of/i.test(L) && !FR.memo.test(L.replace(/appointed|appointment/ig,''));
+    if(/liability|loan and advance|non-recovery/i.test(L)) return; // part of the certificate the app writes itself
+    var isSchool=FR.school.test(L) && !/^\s*(?:he|she|his|her|the school|school came)\b/i.test(L) && !/\bschools\b|district inspector|D\.?\s*I\.?\s*of/i.test(L) && !FR.memo.test(L.replace(/appointed|appointment/ig,''));
     if(isSchool){ var post=(/head\s*master|headmistress|প্রধান শিক্ষক/i.exec(L)||[])[0]?'Headmaster':(/assistant|asstt|সহকারী/i.test(L)?'Assistant Teacher':'');
       var sc=school(d0, cleanSchool(L), post);
       if(FR.scale.test(L) && !sc.scale){ var mS=/(?:PB|pay\s*band|scale)[^|]*/i.exec(L); if(mS) sc.scale=mS[0].trim(); }
