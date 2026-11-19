@@ -158,6 +158,16 @@ function schema(type){
 }
 function eventsView(T){
   var H=SB.fullHistory(T,A.S).H, h='';
+  var todo=[], PH='(স্কুলের নাম ও ঠিকানা লিখুন)';
+  SB.sortEvents(T.events||[]).forEach(function(e){ if(e.type!=='join') return;
+    if(!e.school || !e.school.trim() || e.school.trim()===PH) todo.push('<li>'+esc(SB.fmt(e.date,A.S.dateFmt))+'-এর যোগদানে <b>স্কুলের নাম ও ঠিকানা</b> লেখা নেই <button class="btn sm2" data-act="editE" data-id="'+e.id+'">এখানে লিখুন</button></li>');
+    else if(!e.scale || !e.scale.trim()) todo.push('<li>'+esc(SB.fmt(e.date,A.S.dateFmt))+'-এর যোগদানে <b>বেতনক্রম (কলম 2)</b> লেখা নেই <button class="btn sm2" data-act="editE" data-id="'+e.id+'">এখানে লিখুন</button></li>'); });
+  if((T.events||[]).some(function(e){return e.type==='join';}) && !(T.events||[]).some(function(e){return e.type==='status';}) && !(T.events||[]).some(function(e){return e.type==='join' && (e.postStatus==='Permanent'||e.apptStatus==='Permanent');}))
+    todo.push('<li>পদ/চাকরি কবে <b>Permanent</b> হলো লেখা নেই, তাই সব সারিতে Temporary আসছে <button class="btn sm2" data-act="pickE" data-t="status">যোগ করুন</button></li>');
+  var evs0=SB.sortEvents(T.events||[]), lastJ=evs0.filter(function(e){return e.type==='join';}).pop();
+  if(lastJ && evs0.some(function(e){ return (e.type==='release'||e.type==='resign') && e.date>=lastJ.date; }) && T.noNewJoin===undefined)
+    todo.push('<li>শেষ স্কুল ছাড়ার পর <b>এখনকার স্কুল</b> দেওয়া নেই <button class="btn sm2" data-act="autoFill">এখনকার স্কুল দিন</button></li>');
+  if(todo.length) h+='<div class="todobox"><b>📝 যা এখনও লেখা বাকি:</b><ul>'+todo.join('')+'</ul></div>';
   if(H.flags.length) h+='<div class="flagbox"><b>⚠ হিসাবের সঙ্গে মিলছে না — মূল অর্ডার দেখে নিন:</b><ul>'+H.flags.map(function(f){return '<li>'+esc(f.msg)+'</li>';}).join('')+'</ul></div>';
   h+='<div class="row gap wrap"><button class="btn pri" data-act="autoFill">✍ আজ পর্যন্ত লিখে দাও</button><button class="btn" data-act="addE">+ নতুন ঘটনা</button><button class="btn" data-act="genInc">১ জুলাইয়ের ইনক্রিমেন্টগুলো নিজে বসাও</button><button class="btn" data-act="readT">📄 PDF/ছবি থেকে পড়ো</button><button class="btn" data-act="pasteG">✎ Gemini থেকে পেস্ট করুন</button>'+(STANDALONE?'<button class="btn" data-act="readAI">🤖 AI দিয়ে পড়ো (হাতের লেখা)</button>':'')+'</div>';
   var evs=SB.sortEvents(T.events||[]);
@@ -361,7 +371,7 @@ document.addEventListener('input',function(ev){
   else if(f==='D'){ var D=A.S.da[+form.getAttribute('data-i')]; D[k2]=(k2==='pct'?(v===''?'':+v):v); scheduleSave('S'); }
   else if(f==='L'){ var L=A.S.levels[+form.getAttribute('data-i')]; if(k2==='cells'){ L.cells=v.split(/[^0-9]+/).filter(Boolean).map(Number); } else L[k2]=v; scheduleSave('S'); }
 });
-document.addEventListener('change',function(ev){ if(ev.target.tagName==='SELECT') ev.target.dispatchEvent(new Event('input',{bubbles:true})); });
+document.addEventListener('change',function(ev){ var t0=ev.target; if(t0.hasAttribute && t0.hasAttribute('data-pk') && IMP && IMP.R){ var ii=+t0.getAttribute('data-pk'); IMP.R.pays[ii].kind=t0.value; var dlgb=$('#dlg .dlgb'), st0=dlgb?dlgb.scrollTop:0; snapshotImport(); drawTeacherImport(); var nb=$('#dlg .dlgb'); if(nb) nb.scrollTop=st0; return; } if(ev.target.tagName==='SELECT') ev.target.dispatchEvent(new Event('input',{bubbles:true})); });
 window.addEventListener('resize',function(){ if(A.view==='teacher'&&A.tab==='pages') drawPages(); });
 
 // ---------- offline reading (PDF/ছবি) ----------
@@ -399,6 +409,8 @@ function prepPays(R,T){
   var hasJoin=(T.events||[]).some(function(e){return e.type==='join';});
   if(!hasJoin && P.length){ var f=P.filter(function(p){return !p.sus;})[0]; if(f && f.kind!=='join'){ f.kind='join'; f.auto='প্রথম সারি, তাই যোগদান ধরা হলো'; } }
 }
+function snapshotImport(){ var d=$('#dlg'), R=IMP.R; d.querySelectorAll('[data-pi]').forEach(function(c){ var i=+c.getAttribute('data-pi'), p=R.pays[i]; if(!p) return; p.sus=!c.checked;
+    var dd=d.querySelector('[data-pd="'+i+'"]'), pp=d.querySelector('[data-pp="'+i+'"]'), ps=d.querySelector('[data-ps="'+i+'"]'); if(dd) p.date=dd.value; if(pp) p.pay=+pp.value.replace(/[^0-9]/g,'')||p.pay; if(ps) p.school=ps.value; }); }
 function drawTeacherImport(){
   var R=IMP.R, T=A.T[A.tid], h='<div class="dlgbox"><div class="dlgh"><b>ফাইল থেকে যা পাওয়া গেল</b><button class="ib" data-act="closeD">✕</button></div><div class="dlgb">'+scanNote(R);
   var keys=Object.keys(R.info);
@@ -407,7 +419,7 @@ function drawTeacherImport(){
   prepPays(R,T);
   if(R.pays.length){ h+='<h4>বেতনের সারি ('+R.pays.length+'টি)</h4><div class="muted sm">একই তারিখের ঘটনা আগে থেকে থাকলে শুধু বেতনটা বসবে, আর হিসাবের সঙ্গে না মিললে লাল দাগ দেখাবে।</div>';
     R.pays.forEach(function(p,i){ var ex=have[p.date];
-      h+='<div class="imrow"><label class="chk"><input type="checkbox" data-pi="'+i+'"'+(p.sus?'':' checked')+'></label><input type="date" data-pd="'+i+'" value="'+p.date+'"><select data-pk="'+i+'">'+[['inc','ইনক্রিমেন্ট'],['join','যোগদান (নতুন স্কুল)'],['fix2009','ROPA-2009 ফিক্সেশন'],['fix','পে-রিভিশন (ROPA-2019/নতুন)'],['benefit','১০ বছর/CAS'],['payrow','অন্য সারি']].map(function(o){ return '<option value="'+o[0]+'"'+(o[0]===p.kind?' selected':'')+'>'+o[1]+'</option>'; }).join('')+'</select><input data-pp="'+i+'" inputmode="numeric" value="'+p.pay+'">'+
+      h+='<div class="imrow"><label class="chk"><input type="checkbox" data-pi="'+i+'"'+(p.sus?'':' checked')+'></label><input type="date" data-pd="'+i+'" value="'+p.date+'"><select data-pk="'+i+'">'+[['inc','ইনক্রিমেন্ট'],['join','যোগদান (নতুন স্কুল)'],['fix2009','ROPA-2009 ফিক্সেশন'],['fix','পে-রিভিশন (ROPA-2019/নতুন)'],['benefit','১০ বছর/CAS'],['payrow','অন্য সারি']].map(function(o){ return '<option value="'+o[0]+'"'+(o[0]===p.kind?' selected':'')+'>'+o[1]+'</option>'; }).join('')+'</select><input data-pp="'+i+'" inputmode="numeric" value="'+p.pay+'">'+(p.kind==='join'?'<input class="imsch" data-ps="'+i+'" placeholder="যোগদানের স্কুলের নাম ও ঠিকানা লিখুন" value="'+esc(p.school||'')+'">':'')+
         '<small class="muted">'+(p.sus?'<b class="flag">⚠ আগের সারির চেয়ে অনেক কম — সম্ভবত গ্রেড পে বা ভুল পড়া, তাই টিক তুলে রাখা হলো। </b>':'')+(p.auto?'<b>'+esc(p.auto)+'। </b>':'')+(ex?'আগে থেকে আছে · ':'')+esc((p.line||'').slice(0,90))+'</small></div>'; });
     h+='<div class="muted sm">নতুন স্কুলে যোগ দেওয়ার সারিটা “যোগদান (নতুন স্কুল)” করে দিন — না হলে বেতনের হিসাব ভুল মিলবে।</div>'; }
   if(R.pays.length && !(T.events||[]).some(function(e){return e.type==='join';}) && !R.pays.some(function(p){return p.kind==='join';})) h+='<div class="flagbox">এই শিক্ষকের “স্কুলে যোগদান” এখনও দেওয়া হয়নি। সারিগুলো যোগ হবে, কিন্তু বেতনের হিসাব মেলানোর জন্য পরে যোগদানটা দিয়ে দিন।</div>';
@@ -431,7 +443,7 @@ function applyTeacherImport(){
     if(!date) return; var ex=have[date];
     if(ex){ ex.pay=pay; nUpd++; return; }
     var e={id:uid(), seq:Date.now()+nNew, type:k, date:date, pay:pay};
-    var pr0=R.pays[+i]||{};
+    var pr0=R.pays[+i]||{}; var sIn=d.querySelector('[data-ps="'+i+'"]'); if(sIn && sIn.value.trim()) pr0.school=sIn.value.trim();
     if(k==='join'){ e.type='join'; e.post='Assistant Teacher'; e.school=pr0.school||'(স্কুলের নাম ও ঠিকানা লিখুন)'; e.sys=date>='2016-01-01'?((A.S.levels[0]||{}).id||'2009'):(date>='2006-01-01'?'2009':'manual'); e.postStatus='Temporary'; e.apptStatus='Temporary'; hasJoin=true; }
     if(e.type==='fix2009'){ e.showDate=date; e.wef='2006-01-01'; e.scaleText='PB-4 (Rs. 9000-40500) + GP Rs. 4800'; e.go='G.O. No. 46-SE(B) dt. 27/02/09'; e.reason='Pay fixed as per ROPA 2009'; }
     if(e.type==='fix'){ e.commission=guessComm(date)||'ROPA-2019'; var keepPay=e.pay, keepDate=e.date; applyComm(e); e.pay=keepPay; e.date=keepDate;
