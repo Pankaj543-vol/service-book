@@ -102,7 +102,7 @@ function P(T){ var f=T.sex==='F'; return {He:f?'She':'He', he:f?'she':'he', his:
 // ---------- event ordering ----------
 var ORDER={join:0, fix2009:1, status:2, fix:3, payrow:4, inc:5, benefit:6, note:7, verify:8, resign:9, release:9};
 var PAYTYPES={join:1, inc:1, fix:1, fix2009:1, benefit:1, payrow:1};
-function sortEvents(ev){ return ev.slice().sort(function(a,b){ var x=(a.date||'').localeCompare(b.date||''); if(x) return x;
+function sortEvents(ev){ return ev.slice().sort(function(a,b){ var x=(a.ord||a.date||'').localeCompare(b.ord||b.date||''); if(x) return x;
   var o=(ORDER[a.type]||0)-(ORDER[b.type]||0); if(o) return o; return (a.seq||0)-(b.seq||0); }); }
 
 // ---------- pay chain + history rows ----------
@@ -116,7 +116,9 @@ function computeHistory(T,S,LVM){
   var rows=[], flags=[], payRows=[], postings=[];
   function fd(s){ return fmt(s,F); }
   function lvl(){ return levelById(S,st.level); }
-  function setPay(p){ st.pay=p; if(st.sys==='matrix'){ var L=lvl(); st.idx=L?L.cells.indexOf(p):-1; } }
+  var curDate=''; st.hist=[];
+  function payOn(d){ var v=null; st.hist.forEach(function(h){ if(h.d<=d) v=h.p; }); return v; }
+  function setPay(p){ st.pay=p; if(p!=null && curDate) st.hist.push({d:curDate,p:p}); if(st.sys==='matrix'){ var L=lvl(); st.idx=L?L.cells.indexOf(p):-1; } }
   function nextIncr(){ if(st.pay==null) return null;
     if(st.sys==='2009') return st.pay+ceilTo(st.pay*(st.incPct||S.r2009.pct)/100,(st.incRound||S.r2009.roundTo));
     if(st.sys==='matrix'){ var L=lvl(); if(!L) return null; if(st.idx<0){ for(var i=0;i<L.cells.length;i++) if(L.cells[i]>st.pay) return L.cells[i]; return null; } return L.cells[st.idx+1]||null; }
@@ -133,7 +135,7 @@ function computeHistory(T,S,LVM){
     if(extra) for(var k in extra) r[k]=extra[k]; rows.push(r); payRows.push(r); return r; }
 
   evs.forEach(function(e){
-    e._exp=null;
+    e._exp=null; curDate=e.ord?'':e.date;
     var lt=e.leaveText!=null&&e.leaveText!==''? e.leaveText : S.leaveTextDefault;
     if(e.type==='join'){
       var prevPay=st.pay;
@@ -184,7 +186,7 @@ function computeHistory(T,S,LVM){
     else if(e.type==='fix'){
       var comm=e.commission||'ROPA-2019', CM=commByName(S,comm)||{};
       var method=e.method||CM.method||'matrix';
-      var factor=+(e.factor||CM.factor)||0; var pre=st.pay; var exp3=null, L3=null, t;
+      var factor=+(e.factor||CM.factor)||0; var pre=e.ord?(payOn(e.date)!=null?payOn(e.date):st.pay):st.pay; var exp3=null, L3=null, t;
       e._pre=pre; e._tgt=(pre!=null&&factor)?Math.round(pre*factor*100)/100:null;
       if(method==='matrix'){
         L3=levelById(S,e.level);
