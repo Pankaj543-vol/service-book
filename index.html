@@ -34,7 +34,7 @@ header .tl{display:flex;align-items:center;gap:8px;min-width:0}header .sch{font-
 h3{margin:22px 0 4px}h4{margin:14px 0 6px}.okbox{background:#e8f5e9;border:1px solid #b7dfbb;border-radius:10px;padding:10px 12px;font-size:13px;color:#1f5e25;margin-bottom:10px}.chk{display:flex;align-items:center;gap:8px;margin:8px 0;flex-wrap:wrap}.chk input[type=checkbox]{width:20px;height:20px}.imv{flex:1;min-width:140px;font:inherit;padding:7px 8px;border:1px solid #cfc9bc;border-radius:8px}.chk small{width:100%;padding-left:28px;color:#777}.imrow{display:grid;grid-template-columns:28px 1fr 1fr 1fr;gap:6px;align-items:center;margin:8px 0;border-bottom:1px dashed #e3ded2;padding-bottom:6px}.imrow input,.imrow select{font:inherit;font-size:14px;padding:6px;border:1px solid #cfc9bc;border-radius:6px;min-width:0}.imrow small{grid-column:1/-1;font-size:11.5px}.dabig{font-size:16px;margin-top:4px}.tw{overflow-x:auto}.dat{border-collapse:collapse;width:100%;font-size:13.5px;background:#fff}.dat th,.dat td{border:1px solid #e1ddd3;padding:7px 6px;text-align:right;white-space:nowrap}.dat th{background:#f7f5ef;text-align:center}.darow{display:grid;grid-template-columns:1fr 1fr;gap:0 10px}.darow .f:nth-child(3){grid-column:1/-1}.todobox{background:#fff8e1;border:1px solid #f0d58a;border-radius:10px;padding:10px 12px;margin-bottom:10px;font-size:14px;color:#5a4300}.todobox ul{margin:6px 0 0;padding-left:18px}.todobox li{margin:6px 0}.imsch{grid-column:2/-1;font:inherit;font-size:14px;padding:6px;border:1px solid #e0b94d;border-radius:6px;background:#fffdf3}.scard summary{cursor:pointer;padding:2px 0}.scard[open] summary{margin-bottom:6px}.g2{display:grid;grid-template-columns:1fr 1fr;gap:0 10px}@media(max-width:420px){.g2{grid-template-columns:1fr}}.ptab td{vertical-align:top}.ptab input,.ptab select{font:inherit;font-size:13.5px;padding:5px;border:1px solid #cfc9bc;border-radius:6px;width:100%;min-width:90px}.ptab tr.bad td{background:#fdecea}details{margin:12px 0}summary{cursor:pointer;color:#1f3b73}
 #pagesWrap{margin-top:10px}.pfit{overflow:hidden;margin:0 auto 12px;box-shadow:0 1px 4px rgba(0,0,0,.25)}
 #toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:#222;color:#fff;padding:10px 16px;border-radius:20px;font-size:14px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:30;max-width:90vw}#toast.on{opacity:1}
-</style></head><body><div id="app"></div><script>window.SB_STANDALONE=true;window.SB_VERSION="20-11-2026 08:54 (b2074d)";</script><div id="dlg"></div><div id="toast"></div>
+</style></head><body><div id="app"></div><script>window.SB_STANDALONE=true;window.SB_VERSION="20-11-2026 21:25 (87c1ac)";</script><div id="dlg"></div><div id="toast"></div>
 <script>// ===== Service Book core logic (pure, no DOM) =====
 var SB = (function(){
 'use strict';
@@ -1884,8 +1884,8 @@ function showDocFields(si,texts,scanned){
 function readFiles(cb){
   var inp=document.createElement('input'); inp.type='file'; inp.multiple=true; inp.accept='application/pdf,image/*'; inp.style.display='none'; document.body.appendChild(inp);
   inp.onchange=function(){ var files=[].slice.call(inp.files||[]); document.body.removeChild(inp); if(!files.length) return;
-    var texts=[], low=false, k=0;
-    (function next(){ if(k>=files.length){ closeDialog(); return cb(texts, low); }
+    var texts=[], low=false, k=0, names=files.map(function(f){ return f.name; });
+    (function next(){ if(k>=files.length){ closeDialog(); return cb(texts, low, names); }
       busy('কাগজ পড়ছি… ('+(k+1)+'/'+files.length+')');
       READER.read(files[k],prog).then(function(doc){ texts.push(READER.toLines(doc).map(function(l){ return l.text; }).join('\n')); if((doc.scanned||[]).length) low=true; k++; next(); })
       .catch(function(){ toast('“'+files[k].name+'” পড়া যায়নি'); k++; next(); }); })(); };
@@ -1913,7 +1913,7 @@ function homeSchoolDialog(pre){
 // ---------- 📂 a teacher's papers, one slot per kind ----------
 var DOCS=[
  {id:'mp', name:'মাধ্যমিকের অ্যাডমিট / সার্টিফিকেট', what:'জন্মতারিখ, নাম', kind:'info'},
- {id:'qual', name:'যোগ্যতার সার্টিফিকেট (B.A./M.A./B.Ed.…)', what:'যোগ্যতা (a) ও (b)', kind:'info'},
+ {id:'qual', name:'যোগ্যতার সার্টিফিকেট / মার্কশিট (যতগুলো আছে)', what:'যোগ্যতা (a) চাকরিতে ঢোকার সময়, (b) পরে বাড়া যোগ্যতা ও তারিখ — সব জুড়ে', kind:'info'},
  {id:'med', name:'মেডিক্যাল ফিটনেস সার্টিফিকেট', what:'উচ্চতা, শনাক্তকরণ চিহ্ন', kind:'info'},
  {id:'rec', name:'SSC/WBSSC-র সুপারিশপত্র', what:'কার মাধ্যমে নিয়োগ, মেমো, তারিখ', kind:'join'},
  {id:'appt', name:'নিয়োগপত্র / M.C. রেজোলিউশন', what:'রেজোলিউশন, পদ, বেতনক্রম', kind:'join'},
@@ -1927,20 +1927,22 @@ var DOCS=[
  {id:'old', name:'আগের স্কুলের সার্ভিস বুকের পাতা (হাতে লেখা)', what:'Gemini দিয়ে টাইপ করে পেস্ট', kind:'gem'}];
 function docsView(T){ var got=T.docs||{};
   var h='<div class="muted sm">যে কাগজ আছে, তার পাশের বোতাম চেপে PDF বা ফোনের ছবি দিন (একসঙ্গে কয়েকটা দেওয়া যায়)। অ্যাপ ইন্টারনেট ছাড়াই পড়ে “যা পাওয়া গেল” দেখাবে — মিলিয়ে “বসাও” চাপবেন। টাইপ করা কাগজ ভালো পড়ে; হাতে লেখা কাগজ ঠিক পড়ে না। কাগজটা ফোনে জমা থাকে না, শুধু তথ্য বসে।</div>';
-  DOCS.forEach(function(D,i){ h+='<div class="card"><div class="row" style="justify-content:space-between;align-items:center;gap:8px"><div><b>'+(i+1)+'. '+D.name+'</b>'+(got[D.id]?' <span class="ok">✅ '+esc(SB.fmt(got[D.id],A.S.dateFmt))+'</span>':'')+'<br><small class="muted">যা বসবে: '+D.what+'</small></div><button class="btn sm2" data-act="docUp" data-doc="'+D.id+'">'+(D.kind==='gem'?'✎ পেস্ট করুন':'📄 আপলোড')+'</button></div></div>'; });
+  DOCS.forEach(function(D,i){ var g=got[D.id], L=!g?[]:(typeof g==='string'?[{d:g}]:g);
+    h+='<div class="card"><div class="row" style="justify-content:space-between;align-items:center;gap:8px"><div><b>'+(i+1)+'. '+D.name+'</b>'+(L.length?' <span class="ok">✅ '+L.length+'টি কাগজ দেওয়া হয়েছে</span>':'')+'<br><small class="muted">যা বসবে: '+D.what+'</small>'+(L.length?'<br><small class="muted">'+L.map(function(x){ return esc((x.n?x.n+' — ':'')+SB.fmt(x.d,A.S.dateFmt)); }).join('<br>')+'</small>':'')+'</div><button class="btn sm2" data-act="docUp" data-doc="'+D.id+'">'+(D.kind==='gem'?'✎ পেস্ট করুন':(L.length?'+ আরও কাগজ':'📄 আপলোড'))+'</button></div></div>'; });
+  h='<div class="muted sm"><b>একটা ঘরে যত খুশি কাগজ দেওয়া যায়</b> — একসঙ্গে কয়েকটা বেছে, বা একটা দেওয়ার পর “+ আরও কাগজ” চেপে। যেমন যোগ্যতার ঘরে মাধ্যমিক, উচ্চমাধ্যমিক, B.A., M.A., B.Ed. সব আলাদা আলাদা দিন — অ্যাপ সব জুড়ে লিখবে।</div>'+h;
   return h; }
 function docUpload(id){ var D=DOCS.filter(function(x){ return x.id===id; })[0]; if(!D) return;
   if(D.kind==='gem'){ pasteDialog(); return; }
-  readFiles(function(texts,low){ docDialog(D, texts, low); }); }
+  readFiles(function(texts,low,names){ docDialog(D, texts, low, names); }); }
 function docExtract(D,t){ t=bnDigits(t); var flat=t.replace(/\s*\n\s*/g,' '), f={}, m;
   if(D.id==='mp'){ m=new RegExp('(?:date\\s+of\\s+birth|d\\.?\\s*o\\.?\\s*b\\.?|born\\s+on|জন্ম(?:\\s*তারিখ)?)[^0-9A-Za-z]{0,20}'+'(\\d{1,2}\\s*[.\\-\\/]\\s*\\d{1,2}\\s*[.\\-\\/]\\s*\\d{2,4}|\\d{1,2}(?:st|nd|rd|th)?\\s+[A-Za-z]+,?\\s+\\d{4})','i').exec(flat);
       var dob=m?pdate(m[1]):''; if(!dob){ var ds=READER.dates(flat).filter(function(x){ return x.iso>='1950-01-01' && x.iso<'2008-01-01'; }); if(ds.length) dob=ds[0].iso; } if(dob) f.dob=dob;
       m=/\bname(?:\s+of\s+the\s+(?:candidate|examinee))?\s*[:\-]\s*([A-Za-z][A-Za-z .]{3,45})/i.exec(t); if(m) f.name=m[1].trim(); }
-  if(D.id==='qual'){ var deg=[], re=/\b(B\.?\s*A\.?|B\.?\s*Sc\.?|B\.?\s*Com\.?|M\.?\s*A\.?|M\.?\s*Sc\.?|M\.?\s*Com\.?|B\.?\s*Ed\.?|M\.?\s*Ed\.?|D\.?\s*El\.?\s*Ed\.?|Ph\.?\s*D\.?)(?=[\s,.(]|$)/g, mm;
-      while((mm=re.exec(flat))){ var dgr=mm[1].replace(/\s+/g,'').replace(/\.?$/,'.'); if(deg.indexOf(dgr)<0) deg.push(dgr); }
-      var bed=deg.filter(function(x){ return /^B\.?Ed/i.test(x); })[0], rest=deg.filter(function(x){ return !/^B\.?Ed/i.test(x); });
-      if(rest.length) f.qualEntry=rest.join(', ');
-      if(bed){ var bd=new RegExp('(?:result|publication|declared|passed)[^0-9]{0,30}(\\d{1,2}\\s*[.\\-\\/]\\s*\\d{1,2}\\s*[.\\-\\/]\\s*\\d{2,4})','i').exec(flat); f.qualLater='B.Ed.'+(bd?' on '+SB.fmt(pdate(bd[1]),A.S.dateFmt):''); } }
+  if(D.id==='qual'){ var found=[], seen={}, re=/\b(Madhyamik|Secondary\s+Examination|Higher\s+Secondary|H\.\s*S\.(?=\s*(?:Exam|Examination|\d))|B\.?\s*A\.?|B\.?\s*Sc\.?|B\.?\s*Com\.?|M\.?\s*A\.?|M\.?\s*Sc\.?|M\.?\s*Com\.?|B\.?\s*Ed\.?|M\.?\s*Ed\.?|D\.?\s*El\.?\s*Ed\.?|M\.?\s*Phil\.?|Ph\.?\s*D\.?|B\.?\s*P\.?\s*Ed\.?)(?=[\s,.(:]|$)/gi, mm;
+      while((mm=re.exec(flat))){ var raw=mm[1], dg=/madhyamik|secondary\s+exam/i.test(raw)&&!/higher/i.test(raw)?'Madhyamik':(/higher|^H\.\s*S/i.test(raw)?'H.S.':raw.replace(/\s+/g,'').replace(/\.?$/,'.').toUpperCase().replace('ED.','Ed.').replace('SC.','Sc.').replace('COM.','Com.').replace('PHIL.','Phil.').replace('PH.D.','Ph.D.').replace('EL.ED.','El.Ed.'));
+        if(seen[dg]) continue; seen[dg]=1; var near=flat.slice(mm.index, mm.index+140), dd=READER.dates(near), yr=/\b(19[5-9]\d|20[0-4]\d)\b/.exec(near);
+        found.push({dg:dg, date:dd.length?dd[0].iso:'', year:dd.length?dd[0].iso.slice(0,4):(yr?yr[1]:'')}); }
+      f._qual=found; }
   if(D.id==='med'){ m=/(\d{3}(?:\.\d+)?)\s*c\.?\s*m\b/i.exec(flat); if(m) f.height=m[1]+' C.M.';
       m=/(?:identification\s*marks?|personal\s*marks?|marks?\s+of\s+identification)\s*[:\-]?\s*([^\n]{3,80})/i.exec(t)||/((?:a\s+)?(?:mole|scar|cut\s*mark|black\s*spot)[^\n.,;]{0,50})/i.exec(t); if(m) f.idMarks=m[1].trim(); }
   if(D.kind==='join'){ f=docFields(t);
@@ -1963,18 +1965,28 @@ function docExtract(D,t){ t=bnDigits(t); var flat=t.replace(/\s*\n\s*/g,' '), f=
 var DOCLBL={dob:'জন্ম তারিখ',name:'নাম',qualEntry:'যোগ্যতা (চাকরিতে ঢোকার সময়)',qualLater:'পরে বাড়া যোগ্যতা ও তারিখ',height:'উচ্চতা',idMarks:'শনাক্তকরণ চিহ্ন',
   sanction:'পদ মঞ্জুরির তথ্য',relDate:'আগের স্কুল ছাড়ার তারিখ',relReason:'আগের স্কুল ছাড়ার কারণ',memo:'মেমো নম্বর',memoDate:'মেমোর তারিখ',by:'কে দিয়েছেন',which:'কী স্থায়ী হলো (both/post/appt)',
   level:'লেভেল',go:'G.O.',actualFrom:'আসল টাকা কবে থেকে',from:'ছুটি শুরুর তারিখ',days:'কত দিন',type:'ধরন (ml/hap)'};
-function docDialog(D,texts,low){
+function docDialog(D,texts,low,names){
   var T=A.T[A.tid], f=docExtract(D,texts.join('\n\n')), slots=schoolSlots(T), lastJ=-1; slots.forEach(function(s,i){ if(s.join) lastJ=i; });
   var tgt=D.kind==='join'?(D.id==='trans'?lastJ+1:Math.max(lastJ,0)):-1;
   if(D.kind==='status'||D.kind==='fix'||D.kind==='join'){ f.date=f.date||''; }
   var lbl=function(k){ return DOCLBL[k]||((DOCF.filter(function(x){return x[0]===k;})[0]||[0,k])[1]); };
+  if(f._qual){ var J=(T.events||[]).filter(function(e){ return e.type==='join'; }).map(function(e){ return e.date; }).sort()[0]||'';
+    var ent=(T.qualEntry||'').trim(), lat=(T.qualLater||'').trim();
+    f._qual.forEach(function(q){ var inEnt=new RegExp('(^|[\\s,/])'+q.dg.replace(/\./g,'\\.')+'(?=$|[\\s,/(])').test(ent), inLat=lat.indexOf(q.dg)>=0; if(inEnt||inLat) return;
+      var after=J && (q.date?q.date>J:(q.year && q.year>J.slice(0,4)));
+      if(after) lat=(lat?lat+'\n':'')+q.dg+(q.date?' on '+SB.fmt(q.date,A.S.dateFmt):(q.year?' ('+q.year+')':''));
+      else if(q.dg!=='Madhyamik' && q.dg!=='H.S.') ent=(ent?ent+', ':'')+q.dg+(q.year?' ('+q.year+')':''); });
+    if(ent!==(T.qualEntry||'').trim()) f.qualEntry=ent; if(lat!==(T.qualLater||'').trim()) f.qualLater=lat;
+    if(!J && f._qual.length) f._note='এখনও যোগদানের তারিখ নেই, তাই সব যোগ্যতা (a)-তে রাখা হলো। পরে নিজে সরিয়ে নিতে পারেন।';
+    if(!f.qualEntry && !f.qualLater && f._qual.length) f._note='এই কাগজের যোগ্যতা আগেই লেখা আছে।'; }
   var keys=Object.keys(f).filter(function(k){ return k.charAt(0)!=='_'; });
   var h='<div class="dlgbox"><div class="dlgh"><b>'+esc(D.name)+' — যা পাওয়া গেল</b><button class="ib" data-act="closeD">✕</button></div><div class="dlgb">';
+  if(f._note) h+='<div class="muted sm">'+esc(f._note)+'</div>';
   if(low) h+='<div class="flagbox">কাগজটা ছবি/স্ক্যান — লেখা আন্দাজে পড়া হয়েছে। প্রতিটা নম্বর আর তারিখ মিলিয়ে নিন।</div>';
   if(D.kind==='join') h+='<label class="f form"><span>কোন স্কুলের ঘরে বসবে</span><select id="docSlot">'+slots.map(function(s,i){ return '<option value="'+i+'"'+(i===tgt?' selected':'')+'>'+(ORD_BN[i]||(i+1))+' স্কুল — '+esc(s.join?(s.join.school||'').split('\n')[0]+' ('+SB.fmt(s.join.date,A.S.dateFmt)+')':'খালি ঘর')+'</option>'; }).join('')+'</select></label>';
   if(!keys.length) h+='<div class="empty">কাজের মতো কিছু খুঁজে পাওয়া গেল না। কাগজ হাতে লেখা হলে “Gemini থেকে পেস্ট” দিয়ে চেষ্টা করুন।</div>';
   keys.forEach(function(k){ var v=String(f[k]), isD=/date|Wef$|^dob$|^from$|actualFrom|relDate/i.test(k)&&!/relReason/.test(k), big=/school|scale|sanction|go|idMarks|qual/.test(k);
-    var cur=D.kind==='info'?(T[k]||''):'';
+    var cur=(D.kind==='info'&&!/^qual/.test(k))?(T[k]||''):'';
     h+='<label class="chk"><input type="checkbox" data-xk="'+k+'"'+(cur&&cur!==v?'':' checked')+'> <span>'+lbl(k)+'</span> '+(big?'<textarea class="imv" rows="2" data-xv="'+k+'">'+esc(v)+'</textarea>':'<input class="imv" data-xv="'+k+'" type="'+(isD?'date':'text')+'" value="'+esc(v)+'">')+(cur&&cur!==v?'<small>এখন আছে: '+esc(cur)+'</small>':'')+((k==='date'&&!v)?'<small><b>কাগজে তারিখ পাওয়া যায়নি — নিজে লিখুন</b></small>':'')+'</label>'; });
   h+='<details><summary>কাগজের পুরো পড়া লেখা</summary><textarea readonly rows="8" style="width:100%;font-size:12px">'+esc(texts.join('\n\n'))+'</textarea></details></div>';
   h+='<div class="dlgf"><button class="btn" data-act="closeD">বাতিল</button>'+(keys.length?'<button class="btn pri" id="docApply">টিক দেওয়াগুলো বসাও</button>':'')+'</div></div>';
@@ -2000,7 +2012,7 @@ function docDialog(D,texts,low){
       var FH=SB.fullHistory(T,A.S), per=FH.LV.rows.filter(function(r){ return r.kind==='leave' && r.from<=v.from && r.to>=v.from; })[0];
       if(!per){ toast('এই তারিখ ছুটির হিসাবের কোনো বছরে পড়ছে না — আগে যোগদান বসান'); return; }
       var o=T.leave.ov[per.key]=T.leave.ov[per.key]||{}, fld=(v.type==='hap')?'t8':'t7'; o[fld]=String((+o[fld]||0)+(+v.days)); n++; }
-    T.docs=T.docs||{}; T.docs[D.id]=SB.todayStr(); scheduleSave('T',A.tid); closeDialog(); render(); toast(n+'টি ঘর বসল'); };
+    T.docs=T.docs||{}; var gl=T.docs[D.id]; gl=!gl?[]:(typeof gl==='string'?[{d:gl}]:gl); (names||['']).forEach(function(nm){ gl.push({n:nm, d:SB.todayStr()}); }); T.docs[D.id]=gl; scheduleSave('T',A.tid); closeDialog(); render(); toast(n+'টি ঘর বসল'); };
 }
 var PAYKINDS=[['inc','ইনক্রিমেন্ট'],['benefit','১০ বছর/CAS'],['payrow','অন্য সারি'],['fix','পে-রিভিশন'],['fix2009','ROPA-2009 ফিক্সেশন'],['join','যোগদান']];
 function payTableView(T){
