@@ -323,7 +323,7 @@ document.addEventListener('click',function(ev){
   if(act==='home'){ A.view='home'; render(); }
   else if(act==='settings'){ A.view='settings'; render(); }
   else if(act==='homeSchool'){ homeSchoolDialog(); }
-  else if(act==='docUp'){ docUpload(b.getAttribute('data-doc')); }
+  else if(act==='docUp'){ docUpload(b.getAttribute('data-doc'), b.hasAttribute('data-si')?+b.getAttribute('data-si'):-1); }
   else if(act==='newT'){ var nid=uid(); A.T[nid]={id:nid, name:'', sex:'M', desigShort:'A.T.', dobSource:'West Bengal Board of Secondary Education', events:[], leave:{ov:{},notes:{}}}; if(A.S.home&&A.S.home.school) A.T[nid]._draft={0:{home:true}}; pendingNew[nid]=1; A.tid=nid; A.view='teacher'; A.tab='info'; render(); scheduleSave('T',nid); }
   else if(act==='delTid'){ ev.stopPropagation(); var T0=A.T[id]; ask('“'+(T0&&T0.name||'নাম নেই')+'” — এই শিক্ষকের সব তথ্য মুছে যাবে, ফেরত আনা যাবে না। মুছবেন?',function(){ delete A.T[id]; delete pendingNew[id]; render(); if(A.mode==='db') doSave('del',id); else lsPut(); toast('মুছে ফেলা হলো'); }); return; }
   else if(act==='delEmpty'){ var em=Object.keys(A.T).filter(function(k){ var t=A.T[k]; return !t.name && !(t.events||[]).length; }); ask('নাম ছাড়া, কোনো ঘটনা ছাড়া '+em.length+'টি খালি খাতা মুছে যাবে। মুছবেন?',function(){ em.forEach(function(k){ delete A.T[k]; delete pendingNew[k]; if(A.mode==='db') doSave('del',k); }); if(A.mode!=='db') lsPut(); render(); toast(em.length+'টি খালি খাতা মোছা হলো'); }); return; }
@@ -1168,29 +1168,38 @@ function homeSchoolDialog(pre){
 }
 
 // ---------- 📂 a teacher's papers, one slot per kind ----------
-var DOCS=[
- {id:'mp', name:'মাধ্যমিকের অ্যাডমিট / সার্টিফিকেট', what:'জন্মতারিখ, নাম', kind:'info'},
- {id:'qual', name:'যোগ্যতার সার্টিফিকেট / মার্কশিট (যতগুলো আছে)', what:'যোগ্যতা (a) চাকরিতে ঢোকার সময়, (b) পরে বাড়া যোগ্যতা ও তারিখ — সব জুড়ে', kind:'info'},
- {id:'med', name:'মেডিক্যাল ফিটনেস সার্টিফিকেট', what:'উচ্চতা, শনাক্তকরণ চিহ্ন', kind:'info'},
- {id:'rec', name:'SSC/WBSSC-র সুপারিশপত্র', what:'কার মাধ্যমে নিয়োগ, মেমো, তারিখ', kind:'join'},
- {id:'appt', name:'নিয়োগপত্র / M.C. রেজোলিউশন', what:'রেজোলিউশন, পদ, বেতনক্রম', kind:'join'},
- {id:'joinr', name:'যোগদান রিপোর্ট', what:'যোগদানের তারিখ, বেতন', kind:'join'},
- {id:'appr', name:'D.I./A.D.I.-র অনুমোদন', what:'অনুমোদন কে দিয়েছেন, মেমো, তারিখ, w.e.f.', kind:'join'},
- {id:'sanc', name:'পদ মঞ্জুরির চিঠি', what:'পদ মঞ্জুরির তথ্য', kind:'join'},
- {id:'conf', name:'স্থায়ীকরণ / Confirmation-এর চিঠি', what:'“স্থায়ী হওয়া” ঘটনা', kind:'status'},
- {id:'trans', name:'বদলির অর্ডার (Utsashree/Mutual), রিলিজ, LPC', what:'আগের স্কুল ছাড়া, নতুন স্কুলে যোগদান, শেষ বেতন', kind:'join'},
- {id:'fix', name:'পে-ফিক্সেশন / ROPA-র কাগজ', what:'ফিক্সেশনের তারিখ, বেতন, লেভেল', kind:'fix'},
- {id:'lv', name:'ছুটির মঞ্জুরি আদেশ (ML/HAP)', what:'ছুটির হিসাবে দিন', kind:'leave'},
- {id:'old', name:'আগের স্কুলের সার্ভিস বুকের পাতা (হাতে লেখা)', what:'Gemini দিয়ে টাইপ করে পেস্ট', kind:'gem'}];
-function docsView(T){ var got=T.docs||{};
-  var h='<div class="muted sm">যে কাগজ আছে, তার পাশের বোতাম চেপে PDF বা ফোনের ছবি দিন (একসঙ্গে কয়েকটা দেওয়া যায়)। অ্যাপ ইন্টারনেট ছাড়াই পড়ে “যা পাওয়া গেল” দেখাবে — মিলিয়ে “বসাও” চাপবেন। টাইপ করা কাগজ ভালো পড়ে; হাতে লেখা কাগজ ঠিক পড়ে না। কাগজটা ফোনে জমা থাকে না, শুধু তথ্য বসে।</div>';
-  DOCS.forEach(function(D,i){ var g=got[D.id], L=!g?[]:(typeof g==='string'?[{d:g}]:g);
-    h+='<div class="card"><div class="row" style="justify-content:space-between;align-items:center;gap:8px"><div><b>'+(i+1)+'. '+D.name+'</b>'+(L.length?' <span class="ok">✅ '+L.length+'টি কাগজ দেওয়া হয়েছে</span>':'')+'<br><small class="muted">যা বসবে: '+D.what+'</small>'+(L.length?'<br><small class="muted">'+L.map(function(x){ return esc((x.n?x.n+' — ':'')+SB.fmt(x.d,A.S.dateFmt)); }).join('<br>')+'</small>':'')+'</div><button class="btn sm2" data-act="docUp" data-doc="'+D.id+'">'+(D.kind==='gem'?'✎ পেস্ট করুন':(L.length?'+ আরও কাগজ':'📄 আপলোড'))+'</button></div></div>'; });
-  h='<div class="muted sm"><b>একটা ঘরে যত খুশি কাগজ দেওয়া যায়</b> — একসঙ্গে কয়েকটা বেছে, বা একটা দেওয়ার পর “+ আরও কাগজ” চেপে। যেমন যোগ্যতার ঘরে মাধ্যমিক, উচ্চমাধ্যমিক, B.A., M.A., B.Ed. সব আলাদা আলাদা দিন — অ্যাপ সব জুড়ে লিখবে।</div>'+h;
+ var DOCS=[
+ {id:'mp', g:'p', name:'মাধ্যমিকের অ্যাডমিট / সার্টিফিকেট', what:'জন্মতারিখ, নাম', kind:'info'},
+ {id:'qual', g:'p', name:'যোগ্যতার সার্টিফিকেট / মার্কশিট (যতগুলো আছে)', what:'যোগ্যতা (a) চাকরিতে ঢোকার সময়, (b) পরে বাড়া যোগ্যতা ও তারিখ — সব জুড়ে', kind:'info'},
+ {id:'med', g:'p', name:'মেডিক্যাল ফিটনেস সার্টিফিকেট', what:'উচ্চতা, শনাক্তকরণ চিহ্ন', kind:'info'},
+ {id:'fix', g:'p', name:'পে-ফিক্সেশন / ROPA-র কাগজ', what:'ফিক্সেশনের তারিখ, বেতন, লেভেল', kind:'fix'},
+ {id:'lv', g:'p', name:'ছুটির মঞ্জুরি আদেশ (ML/HAP)', what:'ছুটির হিসাবে দিন', kind:'leave'},
+ {id:'old', g:'p', name:'আগের সার্ভিস বুকের পাতা (হাতে লেখা)', what:'Gemini দিয়ে টাইপ করে পেস্ট', kind:'gem'},
+ {id:'trans', g:'s', name:'বদলির অর্ডার (Utsashree/Mutual) ও LPC', what:'এই স্কুলে আসা, শেষ বেতন, আগের স্কুল ছাড়া', kind:'join'},
+ {id:'rec', g:'s', name:'SSC/WBSSC-র সুপারিশপত্র', what:'কার মাধ্যমে নিয়োগ, মেমো, তারিখ', kind:'join'},
+ {id:'appt', g:'s', name:'নিয়োগপত্র / M.C. রেজোলিউশন', what:'রেজোলিউশন, পদ, বেতনক্রম', kind:'join'},
+ {id:'joinr', g:'s', name:'যোগদান রিপোর্ট', what:'যোগদানের তারিখ, বেতন', kind:'join'},
+ {id:'appr', g:'s', name:'D.I./A.D.I.-র অনুমোদন', what:'অনুমোদন কে দিয়েছেন, মেমো, তারিখ, w.e.f.', kind:'join'},
+ {id:'sanc', g:'s', name:'পদ মঞ্জুরির চিঠি', what:'পদ মঞ্জুরির তথ্য', kind:'join'},
+ {id:'conf', g:'s', name:'স্থায়ীকরণ / Confirmation-এর চিঠি', what:'“স্থায়ী হওয়া” ঘটনা', kind:'status'},
+ {id:'rel', g:'s', name:'রিলিজ অর্ডার / পদত্যাগপত্র', what:'এই স্কুল ছাড়ার তারিখ ও কারণ', kind:'rel'}];
+function docKey(D,T,si){ if(D.g!=='s') return D.id; var s=schoolSlots(T)[si]||{}; return D.id+'@'+(s.join?s.join.id:'slot'+si); }
+function docRow(D,T,si,n){ var got=T.docs||{}, g=got[docKey(D,T,si)], L=!g?[]:(typeof g==='string'?[{d:g}]:g);
+  return '<div class="card"><div class="row" style="justify-content:space-between;align-items:center;gap:8px"><div><b>'+n+'. '+D.name+'</b>'+(L.length?' <span class="ok">✅ '+L.length+'টি কাগজ</span>':'')+'<br><small class="muted">যা বসবে: '+D.what+'</small>'+(L.length?'<br><small class="muted">'+L.map(function(x){ return esc((x.n?x.n+' — ':'')+SB.fmt(x.d,A.S.dateFmt)); }).join('<br>')+'</small>':'')+'</div><button class="btn sm2" data-act="docUp" data-doc="'+D.id+'"'+(si>=0?' data-si="'+si+'"':'')+'>'+(D.kind==='gem'?'✎ পেস্ট করুন':(L.length?'+ আরও কাগজ':'📄 আপলোড'))+'</button></div></div>'; }
+function docsView(T){
+  var h='<div class="muted sm"><b>একটা ঘরে যত খুশি কাগজ দেওয়া যায়</b> — একসঙ্গে কয়েকটা বেছে, বা পরে “+ আরও কাগজ” চেপে। PDF বা ফোনের ছবি; অ্যাপ ইন্টারনেট ছাড়াই পড়ে “যা পাওয়া গেল” দেখাবে — মিলিয়ে “বসাও” চাপবেন। টাইপ করা কাগজ ভালো পড়ে; হাতে লেখা নয়। কাগজটা ফোনে জমা থাকে না, শুধু তথ্য বসে।</div>';
+  h+='<h3>👤 শিক্ষকের নিজের কাগজ (সব স্কুলের জন্য একবার)</h3>';
+  DOCS.filter(function(D){ return D.g==='p'; }).forEach(function(D,i){ h+=docRow(D,T,-1,i+1); });
+  var slots=schoolSlots(T), used=slots.filter(function(s){ return s.join; }).length, schoolDocs=DOCS.filter(function(D){ return D.g==='s'; });
+  slots.forEach(function(s,si){ if(!s.join && si!==used) return; var j=s.join;
+    var title=(ORD_BN[si]||(si+1)+'তম')+' স্কুল — '+(j?esc((j.school||'(নাম লেখা হয়নি)').split('\n')[0])+' ('+SB.fmt(j.date,A.S.dateFmt)+' থেকে'+(s.rel&&s.rel.date?' '+SB.fmt(s.rel.date,A.S.dateFmt)+' পর্যন্ত':' এখনও')+')':'নতুন স্কুল (এখনও খাতায় নেই)');
+    h+='<details class="card scard"'+(si===used-1||!j?' open':'')+'><summary><b>🏫 '+title+'</b></summary>'+(j?'':'<div class="muted sm">এখানে কাগজ দিলে নতুন স্কুলের ঘর তৈরি হবে — কাগজে যোগদানের তারিখ না থাকলে অ্যাপ জিজ্ঞেস করবে।</div>');
+    schoolDocs.forEach(function(D,i){ if(si===0 && D.id==='trans') return; h+=docRow(D,T,si,i+1); });
+    h+='</details>'; });
   return h; }
-function docUpload(id){ var D=DOCS.filter(function(x){ return x.id===id; })[0]; if(!D) return;
+function docUpload(id,si){ var D=DOCS.filter(function(x){ return x.id===id; })[0]; if(!D) return;
   if(D.kind==='gem'){ pasteDialog(); return; }
-  readFiles(function(texts,low,names){ docDialog(D, texts, low, names); }); }
+  readFiles(function(texts,low,names){ docDialog(D, texts, low, names, si); }); }
 function docExtract(D,t){ t=bnDigits(t); var flat=t.replace(/\s*\n\s*/g,' '), f={}, m;
   if(D.id==='mp'){ m=new RegExp('(?:date\\s+of\\s+birth|d\\.?\\s*o\\.?\\s*b\\.?|born\\s+on|জন্ম(?:\\s*তারিখ)?)[^0-9A-Za-z]{0,20}'+'(\\d{1,2}\\s*[.\\-\\/]\\s*\\d{1,2}\\s*[.\\-\\/]\\s*\\d{2,4}|\\d{1,2}(?:st|nd|rd|th)?\\s+[A-Za-z]+,?\\s+\\d{4})','i').exec(flat);
       var dob=m?pdate(m[1]):''; if(!dob){ var ds=READER.dates(flat).filter(function(x){ return x.iso>='1950-01-01' && x.iso<'2008-01-01'; }); if(ds.length) dob=ds[0].iso; } if(dob) f.dob=dob;
@@ -1214,17 +1223,19 @@ function docExtract(D,t){ t=bnDigits(t); var flat=t.replace(/\s*\n\s*/g,' '), f=
       m=/\blevel\s*[-:]?\s*(\d+[A-Z]?)/i.exec(flat); if(m) f.level='L'+m[1].toUpperCase();
       m=/G\.?\s*O\.?\s*No\.?[^\n]{0,70}?(?:dt|dated)\.?\s*[:\-]?\s*\d{1,2}\s*[.\-\/]\s*\d{1,2}\s*[.\-\/]\s*\d{2,4}/i.exec(flat); if(m) f.go=m[0].trim();
       m=/actual(?:ly)?\s*(?:paid|benefit)[^0-9]{0,25}(\d{1,2}\s*[.\-\/]\s*\d{1,2}\s*[.\-\/]\s*\d{2,4})/i.exec(flat); if(m) f.actualFrom=pdate(m[1]); }
+  if(D.kind==='rel'){ m=new RegExp('(?:released|relieved|resign\\w*|resignation)[^.]{0,120}?(?:on|w\\.?e\\.?f\\.?|from|with\\s+effect\\s+from)\\s*'+'(\\d{1,2}\\s*[.\\-\\/]\\s*\\d{1,2}\\s*[.\\-\\/]\\s*\\d{2,4})','i').exec(flat); if(m) f.relDate=pdate(m[1]);
+      f.relKind=/resign/i.test(flat)?'resign':'release'; f.relReason=/utsa?shree/i.test(flat)?"Transferred through 'Utsashree'":(/mutual/i.test(flat)?'Mutual transfer':(/resign/i.test(flat)?'Resignation':'Released')); }
   if(D.kind==='leave'){ var re2=new RegExp('from\\s+'+'(\\d{1,2}\\s*[.\\-\\/]\\s*\\d{1,2}\\s*[.\\-\\/]\\s*\\d{2,4}|\\d{1,2}(?:st|nd|rd|th)?\\s+[A-Za-z]+,?\\s+\\d{4})'+'\\s+to\\s+'+'(\\d{1,2}\\s*[.\\-\\/]\\s*\\d{1,2}\\s*[.\\-\\/]\\s*\\d{2,4}|\\d{1,2}(?:st|nd|rd|th)?\\s+[A-Za-z]+,?\\s+\\d{4})','gi'), m2, days=0, from='';
       while((m2=re2.exec(flat))){ var a=pdate(m2[1]), b=pdate(m2[2]); if(a&&b&&b>=a){ days+=Math.round((SB.pd(b)-SB.pd(a))/86400000)+1; if(!from) from=a; } }
       if(!days){ m=/for\s+(\d{1,3})\s*(?:\(\w+\)\s*)?days/i.exec(flat); if(m) days=+m[1]; var d1=READER.dates(flat); if(d1.length) from=d1[0].iso; }
       if(days){ f.from=from; f.days=String(days); } f.type=/half\s*(?:average\s*)?pay|h\.?\s*a\.?\s*p/i.test(flat)?'hap':'ml'; }
   Object.keys(f).forEach(function(k){ if(!f[k]) delete f[k]; }); return f; }
 var DOCLBL={dob:'জন্ম তারিখ',name:'নাম',qualEntry:'যোগ্যতা (চাকরিতে ঢোকার সময়)',qualLater:'পরে বাড়া যোগ্যতা ও তারিখ',height:'উচ্চতা',idMarks:'শনাক্তকরণ চিহ্ন',
-  sanction:'পদ মঞ্জুরির তথ্য',relDate:'আগের স্কুল ছাড়ার তারিখ',relReason:'আগের স্কুল ছাড়ার কারণ',memo:'মেমো নম্বর',memoDate:'মেমোর তারিখ',by:'কে দিয়েছেন',which:'কী স্থায়ী হলো (both/post/appt)',
+  sanction:'পদ মঞ্জুরির তথ্য',relDate:'স্কুল ছাড়ার তারিখ',relReason:'স্কুল ছাড়ার কারণ',relKind:'release / resign',memo:'মেমো নম্বর',memoDate:'মেমোর তারিখ',by:'কে দিয়েছেন',which:'কী স্থায়ী হলো (both/post/appt)',
   level:'লেভেল',go:'G.O.',actualFrom:'আসল টাকা কবে থেকে',from:'ছুটি শুরুর তারিখ',days:'কত দিন',type:'ধরন (ml/hap)'};
-function docDialog(D,texts,low,names){
-  var T=A.T[A.tid], f=docExtract(D,texts.join('\n\n')), slots=schoolSlots(T), lastJ=-1; slots.forEach(function(s,i){ if(s.join) lastJ=i; });
-  var tgt=D.kind==='join'?(D.id==='trans'?lastJ+1:Math.max(lastJ,0)):-1;
+function docDialog(D,texts,low,names,siIn){
+  var T=A.T[A.tid], f={}; if(D.kind==='join'||D.kind==='qual'||D.id==='qual'){ texts.forEach(function(x){ var g=docExtract(D,x); Object.keys(g).forEach(function(k){ if(k==='_qual') f._qual=(f._qual||[]).concat(g._qual); else if(!f[k]) f[k]=g[k]; }); }); } else f=docExtract(D,texts.join('\n\n')); var slots=schoolSlots(T), lastJ=-1; slots.forEach(function(s,i){ if(s.join) lastJ=i; });
+  var tgt=(siIn!=null&&siIn>=0)?siIn:(D.kind==='join'?(D.id==='trans'?lastJ+1:Math.max(lastJ,0)):-1);
   if(D.kind==='status'||D.kind==='fix'||D.kind==='join'){ f.date=f.date||''; }
   var lbl=function(k){ return DOCLBL[k]||((DOCF.filter(function(x){return x[0]===k;})[0]||[0,k])[1]); };
   if(f._qual){ var J=(T.events||[]).filter(function(e){ return e.type==='join'; }).map(function(e){ return e.date; }).sort()[0]||'';
@@ -1240,7 +1251,7 @@ function docDialog(D,texts,low,names){
   var h='<div class="dlgbox"><div class="dlgh"><b>'+esc(D.name)+' — যা পাওয়া গেল</b><button class="ib" data-act="closeD">✕</button></div><div class="dlgb">';
   if(f._note) h+='<div class="muted sm">'+esc(f._note)+'</div>';
   if(low) h+='<div class="flagbox">কাগজটা ছবি/স্ক্যান — লেখা আন্দাজে পড়া হয়েছে। প্রতিটা নম্বর আর তারিখ মিলিয়ে নিন।</div>';
-  if(D.kind==='join') h+='<label class="f form"><span>কোন স্কুলের ঘরে বসবে</span><select id="docSlot">'+slots.map(function(s,i){ return '<option value="'+i+'"'+(i===tgt?' selected':'')+'>'+(ORD_BN[i]||(i+1))+' স্কুল — '+esc(s.join?(s.join.school||'').split('\n')[0]+' ('+SB.fmt(s.join.date,A.S.dateFmt)+')':'খালি ঘর')+'</option>'; }).join('')+'</select></label>';
+  if(D.kind==='join'||D.kind==='rel'||(D.kind==='status'&&tgt>=0)) h+='<label class="f form"><span>কোন স্কুলের ঘরে বসবে</span><select id="docSlot">'+slots.map(function(s,i){ return '<option value="'+i+'"'+(i===tgt?' selected':'')+'>'+(ORD_BN[i]||(i+1))+' স্কুল — '+esc(s.join?(s.join.school||'').split('\n')[0]+' ('+SB.fmt(s.join.date,A.S.dateFmt)+')':'খালি ঘর')+'</option>'; }).join('')+'</select></label>';
   if(!keys.length) h+='<div class="empty">কাজের মতো কিছু খুঁজে পাওয়া গেল না। কাগজ হাতে লেখা হলে “Gemini থেকে পেস্ট” দিয়ে চেষ্টা করুন।</div>';
   keys.forEach(function(k){ var v=String(f[k]), isD=/date|Wef$|^dob$|^from$|actualFrom|relDate/i.test(k)&&!/relReason/.test(k), big=/school|scale|sanction|go|idMarks|qual/.test(k);
     var cur=(D.kind==='info'&&!/^qual/.test(k))?(T[k]||''):'';
@@ -1252,14 +1263,16 @@ function docDialog(D,texts,low,names){
   go.onclick=function(){ var v={}; dl.querySelectorAll('[data-xk]').forEach(function(c){ if(!c.checked) return; var k=c.getAttribute('data-xk'); v[k]=dl.querySelector('[data-xv="'+k+'"]').value.trim(); });
     var n=0;
     if(D.kind==='info'){ Object.keys(v).forEach(function(k){ if(v[k]){ T[k]=v[k]; n++; } }); }
-    else if(D.kind==='join'){ var si=+$('#docSlot').value, sj=schoolSlots(T)[si]||{};
+    else if(D.kind==='join'){ var si=+$('#docSlot').value, sj=schoolSlots(T)[si]||{}; siIn=si;
       if(!sj.join && !v.date){ toast('এই ঘরে আগে যোগদানের তারিখ লাগবে — তালিকায় তারিখ লিখুন বা অন্য স্কুল বাছুন'); return; }
       if(v.date) slotUpdate(si,'date',v.date);
       if(f._level && v.scale && A.S.levels.some(function(L){ return L.id===f._level; })) slotUpdate(si,'sys',f._level);
       Object.keys(v).forEach(function(k){ if(['date','relDate','relReason'].indexOf(k)<0 && v[k]){ slotUpdate(si,k,v[k]); n++; } });
       if(v.relDate && si>0){ slotUpdate(si-1,'relDate',v.relDate); slotUpdate(si-1,'relKind','release'); if(v.relReason) slotUpdate(si-1,'relReason',v.relReason); n++; }
       if(v.date) n++; }
-    else if(D.kind==='status'){ if(!v.date){ toast('তারিখ লিখুন'); return; } T.events.push({id:uid(), seq:Date.now(), type:'status', date:v.date, which:v.which||'both', newStatus:'Permanent', memo:v.memo||'', memoDate:v.memoDate||'', by:v.by||''}); n++; }
+    else if(D.kind==='rel'){ var sr=+$('#docSlot').value; if(!(schoolSlots(T)[sr]||{}).join){ toast('এই স্কুলের যোগদান আগে বসান'); return; } if(!v.relDate){ toast('ছাড়ার তারিখ লিখুন'); return; }
+      slotUpdate(sr,'relDate',v.relDate); slotUpdate(sr,'relKind',v.relKind==='resign'?'resign':'release'); if(v.relReason) slotUpdate(sr,'relReason',v.relReason); n++; siIn=sr; }
+    else if(D.kind==='status'){ if(!v.date){ toast('তারিখ লিখুন'); return; } if($('#docSlot')) siIn=+$('#docSlot').value; T.events.push({id:uid(), seq:Date.now(), type:'status', date:v.date, which:v.which||'both', newStatus:'Permanent', memo:v.memo||'', memoDate:v.memoDate||'', by:v.by||''}); n++; }
     else if(D.kind==='fix'){ if(!v.date||!v.pay){ toast('তারিখ আর বেতন লাগবে'); return; }
       var e={id:uid(), seq:Date.now(), type:v.date<'2016-01-01'?'fix2009':'fix', date:v.date, pay:v.pay};
       if(e.type==='fix'){ e.commission=guessComm(v.date)||'ROPA-2019'; applyComm(e); e.pay=v.pay; e.date=v.date; if(v.level) e.level=v.level; if(v.go) e.go=v.go; if(v.actualFrom) e.actualFrom=v.actualFrom; }
@@ -1269,7 +1282,7 @@ function docDialog(D,texts,low,names){
       var FH=SB.fullHistory(T,A.S), per=FH.LV.rows.filter(function(r){ return r.kind==='leave' && r.from<=v.from && r.to>=v.from; })[0];
       if(!per){ toast('এই তারিখ ছুটির হিসাবের কোনো বছরে পড়ছে না — আগে যোগদান বসান'); return; }
       var o=T.leave.ov[per.key]=T.leave.ov[per.key]||{}, fld=(v.type==='hap')?'t8':'t7'; o[fld]=String((+o[fld]||0)+(+v.days)); n++; }
-    T.docs=T.docs||{}; var gl=T.docs[D.id]; gl=!gl?[]:(typeof gl==='string'?[{d:gl}]:gl); (names||['']).forEach(function(nm){ gl.push({n:nm, d:SB.todayStr()}); }); T.docs[D.id]=gl; scheduleSave('T',A.tid); closeDialog(); render(); toast(n+'টি ঘর বসল'); };
+    T.docs=T.docs||{}; var dk=docKey(D,T,siIn!=null?siIn:-1), gl=T.docs[dk]; gl=!gl?[]:(typeof gl==='string'?[{d:gl}]:gl); (names||['']).forEach(function(nm){ gl.push({n:nm, d:SB.todayStr()}); }); T.docs[dk]=gl; scheduleSave('T',A.tid); closeDialog(); render(); toast(n+'টি ঘর বসল'); };
 }
 var PAYKINDS=[['inc','ইনক্রিমেন্ট'],['benefit','১০ বছর/CAS'],['payrow','অন্য সারি'],['fix','পে-রিভিশন'],['fix2009','ROPA-2009 ফিক্সেশন'],['join','যোগদান']];
 function payTableView(T){
