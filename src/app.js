@@ -1197,7 +1197,7 @@ function docExtract(D,t){ t=bnDigits(t); var flat=t.replace(/\s*\n\s*/g,' '), f=
       m=/\bname(?:\s+of\s+the\s+(?:candidate|examinee))?\s*[:\-]\s*([A-Za-z][A-Za-z .]{3,45})/i.exec(t); if(m) f.name=m[1].trim(); }
   if(D.id==='qual'){ var found=[], seen={}, re=/\b(Madhyamik|Secondary\s+Examination|Higher\s+Secondary|H\.\s*S\.(?=\s*(?:Exam|Examination|\d))|B\.?\s*A\.?|B\.?\s*Sc\.?|B\.?\s*Com\.?|M\.?\s*A\.?|M\.?\s*Sc\.?|M\.?\s*Com\.?|B\.?\s*Ed\.?|M\.?\s*Ed\.?|D\.?\s*El\.?\s*Ed\.?|M\.?\s*Phil\.?|Ph\.?\s*D\.?|B\.?\s*P\.?\s*Ed\.?)(?=[\s,.(:]|$)/gi, mm;
       while((mm=re.exec(flat))){ var raw=mm[1], dg=/madhyamik|secondary\s+exam/i.test(raw)&&!/higher/i.test(raw)?'Madhyamik':(/higher|^H\.\s*S/i.test(raw)?'H.S.':raw.replace(/\s+/g,'').replace(/\.?$/,'.').toUpperCase().replace('ED.','Ed.').replace('SC.','Sc.').replace('COM.','Com.').replace('PHIL.','Phil.').replace('PH.D.','Ph.D.').replace('EL.ED.','El.Ed.'));
-        if(seen[dg]) continue; seen[dg]=1; var near=flat.slice(mm.index, mm.index+140), dd=READER.dates(near), yr=/\b(19[5-9]\d|20[0-4]\d)\b/.exec(near);
+        if(seen[dg]) continue; seen[dg]=1; var near=flat.slice(mm.index, mm.index+140), cut=near.slice(4).search(/\b(?:Madhyamik|Higher\s+Secondary|B\.?\s*A\.|B\.?\s*Sc|B\.?\s*Com|M\.?\s*A\.|M\.?\s*Sc|M\.?\s*Com|B\.?\s*Ed|M\.?\s*Ed|D\.?\s*El|M\.?\s*Phil|Ph\.?\s*D)/i); if(cut>=0) near=near.slice(0,cut+4); var dd=READER.dates(near), yr=/\b(19[5-9]\d|20[0-4]\d)\b/.exec(near);
         found.push({dg:dg, date:dd.length?dd[0].iso:'', year:dd.length?dd[0].iso.slice(0,4):(yr?yr[1]:'')}); }
       f._qual=found; }
   if(D.id==='med'){ m=/(\d{3}(?:\.\d+)?)\s*c\.?\s*m\b/i.exec(flat); if(m) f.height=m[1]+' C.M.';
