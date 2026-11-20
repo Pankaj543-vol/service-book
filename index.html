@@ -34,7 +34,7 @@ header .tl{display:flex;align-items:center;gap:8px;min-width:0}header .sch{font-
 h3{margin:22px 0 4px}h4{margin:14px 0 6px}.okbox{background:#e8f5e9;border:1px solid #b7dfbb;border-radius:10px;padding:10px 12px;font-size:13px;color:#1f5e25;margin-bottom:10px}.chk{display:flex;align-items:center;gap:8px;margin:8px 0;flex-wrap:wrap}.chk input[type=checkbox]{width:20px;height:20px}.imv{flex:1;min-width:140px;font:inherit;padding:7px 8px;border:1px solid #cfc9bc;border-radius:8px}.chk small{width:100%;padding-left:28px;color:#777}.imrow{display:grid;grid-template-columns:28px 1fr 1fr 1fr;gap:6px;align-items:center;margin:8px 0;border-bottom:1px dashed #e3ded2;padding-bottom:6px}.imrow input,.imrow select{font:inherit;font-size:14px;padding:6px;border:1px solid #cfc9bc;border-radius:6px;min-width:0}.imrow small{grid-column:1/-1;font-size:11.5px}.dabig{font-size:16px;margin-top:4px}.tw{overflow-x:auto}.dat{border-collapse:collapse;width:100%;font-size:13.5px;background:#fff}.dat th,.dat td{border:1px solid #e1ddd3;padding:7px 6px;text-align:right;white-space:nowrap}.dat th{background:#f7f5ef;text-align:center}.darow{display:grid;grid-template-columns:1fr 1fr;gap:0 10px}.darow .f:nth-child(3){grid-column:1/-1}.todobox{background:#fff8e1;border:1px solid #f0d58a;border-radius:10px;padding:10px 12px;margin-bottom:10px;font-size:14px;color:#5a4300}.todobox ul{margin:6px 0 0;padding-left:18px}.todobox li{margin:6px 0}.imsch{grid-column:2/-1;font:inherit;font-size:14px;padding:6px;border:1px solid #e0b94d;border-radius:6px;background:#fffdf3}.scard summary{cursor:pointer;padding:2px 0}.scard[open] summary{margin-bottom:6px}.g2{display:grid;grid-template-columns:1fr 1fr;gap:0 10px}@media(max-width:420px){.g2{grid-template-columns:1fr}}.ptab td{vertical-align:top}.ptab input,.ptab select{font:inherit;font-size:13.5px;padding:5px;border:1px solid #cfc9bc;border-radius:6px;width:100%;min-width:90px}.ptab tr.bad td{background:#fdecea}details{margin:12px 0}summary{cursor:pointer;color:#1f3b73}
 #pagesWrap{margin-top:10px}.pfit{overflow:hidden;margin:0 auto 12px;box-shadow:0 1px 4px rgba(0,0,0,.25)}
 #toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:#222;color:#fff;padding:10px 16px;border-radius:20px;font-size:14px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:30;max-width:90vw}#toast.on{opacity:1}
-</style></head><body><div id="app"></div><script>window.SB_STANDALONE=true;window.SB_VERSION="20-11-2026 21:32 (b4f13c)";</script><div id="dlg"></div><div id="toast"></div>
+</style></head><body><div id="app"></div><script>window.SB_STANDALONE=true;window.SB_VERSION="20-11-2026 21:41 (835e8e)";</script><div id="dlg"></div><div id="toast"></div>
 <script>// ===== Service Book core logic (pure, no DOM) =====
 var SB = (function(){
 'use strict';
@@ -485,13 +485,14 @@ function splitRow(it,cap){
 }
 
 function colgroup(ws){ return '<colgroup>'+ws.map(function(w){return '<col style="width:'+w+'px">';}).join('')+'</colgroup>'; }
-function cellsHtml(cells,base,ws,units){
-  return cells.map(function(c){ var span=c.to-c.from+1; var cls='ent'+(c.box?' box':'')+(c.nowrapCenter?' ctr':'');
+var OLD=null; // function(src) -> true when that row is already written in the book
+function cellsHtml(cells,base,ws,units,old){
+  return cells.map(function(c){ var span=c.to-c.from+1; var cls='ent'+(c.box?' box':'')+(c.nowrapCenter?' ctr':'')+(old?' old':'');
     return '<td colspan="'+span+'" class="cl"><div class="'+cls+'" style="height:'+(units*RH-2)+'px">'+esc(c.lines.join('\n'))+'</div></td>'; }).join('');
 }
 function bodyRows(page,side,ws,cap){
   var h='', used=0;
-  page.forEach(function(it){ h+='<tr style="height:'+(it.units*RH)+'px" class="ru">'+cellsHtml(side==='L'?it.L:it.R,0,ws,it.units)+'</tr>'; used+=it.units; });
+  page.forEach(function(it){ h+='<tr style="height:'+(it.units*RH)+'px" class="ru">'+cellsHtml(side==='L'?it.L:it.R,0,ws,it.units,OLD&&it.src&&OLD(it.src))+'</tr>'; used+=it.units; });
   for(;used<cap;used++){ h+='<tr style="height:'+RH+'px" class="ru">'+ws.map(function(){return '<td class="cl"></td>';}).join('')+'</tr>'; }
   return h;
 }
@@ -580,12 +581,15 @@ function leavePages(T,S,H,LV){
   return out;
 }
 
-function allPages(T,S){
+function allPages(T,S,opt){
   var FH=SB.fullHistory(T,S), H=FH.H;
+  var up=(opt&&opt.all)?'':(T.writtenUpto||''), key={}; (T.events||[]).forEach(function(e){ key[e.id]=e.ord||e.date; });
+  OLD=up?function(r){ if(r.ev && key[r.ev]) return key[r.ev]<=up; if(r._date) return r._date<=up; if(r.kind==='leave' && r.to) return r.to<=up; return false; }:null;
   // posting scale for carry
   (T.events||[]).forEach(function(e){ if(e.type==='join'){ H.postings.forEach(function(p){ if(p.id===e.id){ var L=SB.levelById(S,e.sys); p.scale=e.scale||(L?L.name+'\n'+L.pre:''); } }); } });
   var LV=FH.LV;
-  return {H:H, LV:LV, pages:[particulars(T,S),finger(T,S)].concat(histPages(T,S,H)).concat(leavePages(T,S,H,LV))};
+  var pp=[particulars(T,S),finger(T,S)]; if(up) pp=pp.map(function(x){ return x.replace(/class="val/g,'class="val old'); });
+  var res={H:H, LV:LV, pages:pp.concat(histPages(T,S,H)).concat(leavePages(T,S,H,LV))}; OLD=null; return res;
 }
 
 var CSS=[
@@ -608,7 +612,7 @@ var CSS=[
 'table.bt tr.ru{-webkit-print-color-adjust:exact;print-color-adjust:exact;background-image:repeating-linear-gradient(to bottom,transparent 0,transparent '+(RH-1)+'px,#9a9a9a '+(RH-1)+'px,#9a9a9a '+RH+'px)}',
 'table.bt tbody tr:last-child td{border-bottom:1px solid #222}',
 '.ent{font-family:"Roboto Condensed","Arial Narrow",Arial,sans-serif;font-size:11px;line-height:'+LH+'px;color:#1b3a9a;white-space:pre;padding:1px 3px 0;overflow:hidden}',
-'.ent.ctr{text-align:center}.ent.box{font-weight:700}'
+'.ent.ctr{text-align:center}.ent.box{font-weight:700}.ent.old,.val.old{visibility:hidden}'
 ].join('\n');
 
 return {allPages:allPages, CSS:CSS, PW:PW, PH:PH, measure:measure};
@@ -986,12 +990,14 @@ function leaveView(T){
 
 // ----- pages -----
 function pagesView(T){
-  return '<div class="row gap wrap"><button class="btn pri" data-act="pdf">PDF ডাউনলোড</button><button class="btn" data-act="html">প্রিন্টের HTML ফাইল</button></div>'+
+  return '<div class="card"><label class="f"><span><b>বইয়ে আগে থেকে লেখা আছে — কোন তারিখ পর্যন্ত</b></span><input type="date" id="wUpto" value="'+esc(T.writtenUpto||'')+'"><small>এই তারিখ পর্যন্ত সারিগুলো পাতায় ফাঁকা থাকবে (জায়গা ঠিক রেখে) — শুধু বাকি অংশ কপি করবেন। পুরো বই নতুন করে লিখতে হলে খালি রাখুন।</small></label>'+(T.writtenUpto?'<label class="chk"><input type="checkbox" id="wAll"'+(A.showAll?' checked':'')+'> <span>আগের লেখা অংশও দেখাও</span></label>':'')+'</div><div class="row gap wrap"><button class="btn pri" data-act="pdf">PDF ডাউনলোড</button><button class="btn" data-act="html">প্রিন্টের HTML ফাইল</button></div>'+
     '<div class="muted sm">পাতাগুলো আসল সার্ভিস বুকের ধাঁচে সাজানো। নীল লেখাটা হাতে কপি করবেন; সই, স্ট্যাম্প আর আঙুলের ছাপের জায়গা ফাঁকা।</div><div id="pagesWrap"></div>';
 }
 function drawPages(){
   var T=A.T[A.tid], W=$('#pagesWrap'); if(!W) return;
-  var res=BOOK.allPages(T,A.S); var avail=Math.min(W.clientWidth||360, 820); var sc=avail/BOOK.PW;
+  var wu=$('#wUpto'); if(wu && !wu._b){ wu._b=1; wu.onchange=function(){ if(wu.value) T.writtenUpto=wu.value; else delete T.writtenUpto; scheduleSave('T',A.tid); render(); }; }
+  var wa=$('#wAll'); if(wa && !wa._b){ wa._b=1; wa.onchange=function(){ A.showAll=wa.checked; render(); }; }
+  var res=BOOK.allPages(T,A.S,{all:A.showAll}); var avail=Math.min(W.clientWidth||360, 820); var sc=avail/BOOK.PW;
   W.innerHTML=res.pages.map(function(p){ return '<div class="pfit" style="width:'+(BOOK.PW*sc)+'px;height:'+(BOOK.PH*sc)+'px"><div style="transform:scale('+sc+');transform-origin:0 0">'+p+'</div></div>'; }).join('');
 }
 function loadScript(src){ return new Promise(function(ok,no){ var s=document.createElement('script'); s.src=src; s.onload=ok; s.onerror=no; document.head.appendChild(s); }); }
@@ -1009,7 +1015,7 @@ function exportPdf(){
   Promise.all([window.html2canvas?1:loadScript(new URL('vendor/html2canvas.min.js',location.href).href), (window.jspdf?1:loadScript(new URL('vendor/jspdf.umd.min.js',location.href).href))])
   .then(function(){ return document.fonts?document.fonts.ready:null; })
   .then(function(){
-    var res=BOOK.allPages(T,A.S); var host=document.createElement('div'); host.style.cssText='position:fixed;left:-10000px;top:0;width:794px'; document.body.appendChild(host);
+    var res=BOOK.allPages(T,A.S,{all:A.showAll}); var host=document.createElement('div'); host.style.cssText='position:fixed;left:-10000px;top:0;width:794px'; document.body.appendChild(host);
     var pdf=new window.jspdf.jsPDF({unit:'pt',format:'a4',compress:true}); var i=0;
     function next(){ if(i>=res.pages.length){ document.body.removeChild(host); return saveFile(fileName(T,'pdf'),pdf.output('blob')); }
       host.innerHTML=res.pages[i]; drawRules(host.firstChild); return window.html2canvas(host.firstChild,{scale:2,backgroundColor:'#ffffff',logging:false}).then(function(cv){
@@ -1018,7 +1024,7 @@ function exportPdf(){
   }).catch(function(e){ toast('PDF তৈরি হয়নি: '+(e&&e.message||e)); });
 }
 function exportHtml(){
-  var T=A.T[A.tid], res=BOOK.allPages(T,A.S);
+  var T=A.T[A.tid], res=BOOK.allPages(T,A.S,{all:A.showAll});
   var doc='<!DOCTYPE html><html><head><meta charset="utf-8"><title>Service Book - '+esc(T.name||'')+'</title><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif:wght@400;700&family=Roboto+Condensed:wght@400;700&display=swap"><style>@page{size:A4;margin:0}body{margin:0;background:#888}.bpage{margin:0 auto 10px;page-break-after:always}@media print{body{background:#fff}.bpage{margin:0}}'+BOOK.CSS+'</style></head><body>'+res.pages.join('')+'</body></html>';
   saveFile(fileName(T,'html'),doc);
 }
@@ -1202,12 +1208,19 @@ function drawTeacherImport(){
   var R=IMP.R, T=A.T[A.tid], h='<div class="dlgbox"><div class="dlgh"><b>ফাইল থেকে যা পাওয়া গেল</b><button class="ib" data-act="closeD">✕</button></div><div class="dlgb">'+scanNote(R);
   var keys=Object.keys(R.info);
   if(keys.length){ h+='<h4>ব্যক্তিগত তথ্য</h4>'; keys.forEach(function(k){ var cur=T[k]; h+='<label class="chk"><input type="checkbox" data-ik="'+k+'"'+(cur?'':' checked')+'> <span>'+INFO_LBL[k]+'</span> <input class="imv" data-iv="'+k+'" type="'+(k==='dob'?'date':'text')+'" value="'+esc(R.info[k])+'">'+(cur?'<small>এখন আছে: '+esc(cur)+'</small>':'')+'</label>'; }); }
-  var have={}; (T.events||[]).forEach(function(e){ if(SB.PAYTYPES[e.type]) have[e.date]=e; });
+  SB.fullHistory(T,A.S); var have={}; (T.events||[]).forEach(function(e){ if(SB.PAYTYPES[e.type]) have[e.date+'|'+(e.ord||'')+'|'+(e.type==='benefit'?'b':'')]=e; });
   prepPays(R,T);
+  var curPay=function(ex){ return ex.pay!=null&&ex.pay!==''?+ex.pay:(ex._exp!=null?+ex._exp:null); };
+  // a 10-year benefit already in the book, pasted again with another date, is the same benefit
+  R.pays.forEach(function(p){ if(p.kind!=='benefit' || have[p.date+'|'+(p.ord||'')+'|b']) return; var g=(p.ord||'').split('#')[0];
+    var same=(T.events||[]).filter(function(e){ return e.type==='benefit' && ((e.ord||'').split('#')[0]===g) && Math.abs(SB.pd(e.date)-SB.pd(p.date))<370*86400000; })[0];
+    if(same){ p.sus=true; p.auto='খাতায় আগে থেকে ১০ বছরের সুবিধা আছে ('+SB.fmt(same.date,A.S.dateFmt)+') — একই ধরে টিক তুলে রাখা হলো'; } });
   if(R.pays.length){ h+='<h4>বেতনের সারি ('+R.pays.length+'টি)</h4><div class="muted sm">একই তারিখের ঘটনা আগে থেকে থাকলে শুধু বেতনটা বসবে, আর হিসাবের সঙ্গে না মিললে লাল দাগ দেখাবে।</div>';
-    R.pays.forEach(function(p,i){ var ex=have[p.date];
+    var nSame=0,nNew=0,nDiff=0; R.pays.forEach(function(p){ var ex=have[p.date+'|'+(p.ord||'')+'|'+(p.kind==='benefit'?'b':'')]; if(!ex) nNew++; else if(curPay(ex)!=null&&curPay(ex)!==+p.pay) nDiff++; else nSame++; });
+    if(nSame||nDiff) h+='<div class="card"><b>খাতায় আগে থেকে যা আছে তার সঙ্গে মেলানো:</b> ✅ মিলেছে '+nSame+' · ➕ নতুন '+nNew+' · ⚠ আলাদা '+nDiff+'<br><small class="muted">হাতে লেখা ঘর আগে মানা হয় — “আলাদা” সারিতে কোনটা রাখবেন বেছে দিন।</small></div>';
+    R.pays.forEach(function(p,i){ var ex=have[p.date+'|'+(p.ord||'')+'|'+(p.kind==='benefit'?'b':'')], exPay=ex?curPay(ex):null, diff=ex&&exPay!=null&&exPay!==+p.pay;
       h+='<div class="imrow"><label class="chk"><input type="checkbox" data-pi="'+i+'"'+(p.sus?'':' checked')+'></label><input type="date" data-pd="'+i+'" value="'+p.date+'"><select data-pk="'+i+'">'+[['inc','ইনক্রিমেন্ট'],['join','যোগদান (নতুন স্কুল)'],['fix2009','ROPA-2009 ফিক্সেশন'],['fix','পে-রিভিশন (ROPA-2019/নতুন)'],['benefit','১০ বছর/CAS'],['payrow','অন্য সারি']].map(function(o){ return '<option value="'+o[0]+'"'+(o[0]===p.kind?' selected':'')+'>'+o[1]+'</option>'; }).join('')+'</select><input data-pp="'+i+'" inputmode="numeric" value="'+p.pay+'">'+(p.kind==='join'?'<input class="imsch" data-ps="'+i+'" placeholder="যোগদানের স্কুলের নাম ও ঠিকানা লিখুন" value="'+esc(p.school||'')+'">':'')+
-        '<small class="muted">'+(p.sus?'<b class="flag">⚠ আগের সারির চেয়ে অনেক কম — সম্ভবত গ্রেড পে বা ভুল পড়া, তাই টিক তুলে রাখা হলো। </b>':'')+(p.auto?'<b>'+esc(p.auto)+'। </b>':'')+(ex?'আগে থেকে আছে · ':'')+esc((p.line||'').slice(0,90))+'</small></div>'; });
+        '<small class="muted">'+(p.sus?'<b class="flag">⚠ আগের সারির চেয়ে অনেক কম — সম্ভবত গ্রেড পে বা ভুল পড়া, তাই টিক তুলে রাখা হলো। </b>':'')+(p.auto?'<b>'+esc(p.auto)+'। </b>':'')+(!ex?'<b>➕ নতুন</b> · ':(diff?'':'<b>✅ মিলেছে</b> · '))+esc((p.line||'').slice(0,90))+'</small>'+(diff?'<div class="flagbox" style="margin:4px 0">⚠ আলাদা: <label><input type="radio" name="pc'+i+'" data-pc="'+i+'" value="hand" checked> খাতায় আছে '+exPay+((ex.pay==null||ex.pay==='')?' (অ্যাপের হিসাব)':'')+'</label> &nbsp; <label><input type="radio" name="pc'+i+'" value="paste"> পেস্টে '+p.pay+'</label>'+(ex._exp!=null?' <small>(হিসাবে আসে '+ex._exp+')</small>':'')+'</div>':'')+'</div>'; });
     h+='<div class="muted sm">নতুন স্কুলে যোগ দেওয়ার সারিটা “যোগদান (নতুন স্কুল)” করে দিন — না হলে বেতনের হিসাব ভুল মিলবে।</div>'; }
   if(R.pays.length && !(T.events||[]).some(function(e){return e.type==='join';}) && !R.pays.some(function(p){return p.kind==='join';})) h+='<div class="flagbox">এই শিক্ষকের “স্কুলে যোগদান” এখনও দেওয়া হয়নি। সারিগুলো যোগ হবে, কিন্তু বেতনের হিসাব মেলানোর জন্য পরে যোগদানটা দিয়ে দিন।</div>';
   if(R.schools && R.schools.length){ h+='<h4>স্কুল ('+R.schools.length+'টি)</h4><div class="muted sm">একই তারিখের যোগদানের সারিতে স্কুলের নাম, ঠিকানা, বেতনক্রম আর স্বীকৃতির লাইন বসবে।</div>';
@@ -1229,7 +1242,7 @@ function applyTeacherImport(){
   d.querySelectorAll('[data-pi]').forEach(function(c){ if(!c.checked) return; var i=c.getAttribute('data-pi');
     var date=d.querySelector('[data-pd="'+i+'"]').value, k=d.querySelector('[data-pk="'+i+'"]').value, pay=d.querySelector('[data-pp="'+i+'"]').value.replace(/[^0-9]/g,'');
     if(!date) return; var pr0=R.pays[+i]||{}; var hk=date+'|'+(pr0.ord||'')+'|'+(k==='benefit'?'b':''); var ex=have[hk];
-    if(ex){ ex.pay=pay; nUpd++; return; }
+    if(ex){ var pick=d.querySelector('input[name="pc'+i+'"]:checked'); if(pick && pick.value==='paste' && +ex.pay!==+pay){ ex.pay=pay; nUpd++; } return; }
     var e={id:uid(), seq:Date.now()+nNew, type:k, date:date, pay:pay}; if(pr0.ord) e.ord=pr0.ord; if(pr0.end) e.end=pr0.end; if(pr0.reason) e.reason=pr0.reason; var sIn=d.querySelector('[data-ps="'+i+'"]'); if(sIn && sIn.value.trim()) pr0.school=sIn.value.trim();
     if(k==='join'){ e.type='join'; e.post='Assistant Teacher'; e.school=pr0.school||'(স্কুলের নাম ও ঠিকানা লিখুন)'; e.sys=date>='2016-01-01'?((A.S.levels[0]||{}).id||'2009'):(date>='2006-01-01'?'2009':'manual'); if(e.sys==='2009' && R.pays.some(function(q){ return q.kind==='fix2009' && q.date>date; })) e.sys='manual'; /* old scale until ROPA-2009 */ e.postStatus='Temporary'; e.apptStatus='Temporary'; hasJoin=true; }
     if(e.type==='fix2009'){ if(pr0.extra) e.extra=pr0.extra; e.showDate=pr0.show||date; e.wef='2006-01-01'; e.scaleText='PB-4 (Rs. 9000-40500) + GP Rs. 4800'; e.go='G.O. No. 46-SE(B) dt. 27/02/09'; e.reason='Pay fixed as per ROPA 2009'; }
@@ -1242,11 +1255,12 @@ function applyTeacherImport(){
       var j=T.events.filter(function(e){ return e.type==='join' && s.date && e.date===s.date; })[0];
       if(!j && !s.date) j=SB.sortEvents(T.events).filter(function(e){ return e.type==='join'; })[0]; // no date: first school
       if(!j && s.date){ j={id:uid(), seq:Date.now()+nExtra, type:'join', date:s.date, sys:s.date>='2016-01-01'?((A.S.levels[0]||{}).id||'2009'):(s.date>='2006-01-01'?'2009':'manual'), postStatus:'Temporary', apptStatus:'Temporary'}; T.events.push(j); }
-      if(!j) return; if(s.post) j.post=s.post; if(s.school) j.school=s.school; if(s.scale){ j.scale=s.scale; if(/\d{3,5}\s*-\s*\d{2,4}\s*-\s*\d{3,5}\s*-/.test(s.scale) && !/\bPB|grade\s*pay|\bG\.?P\b|level/i.test(s.scale)) j.sys='manual'; } if(s.recog.length) j.recog=s.recog.join('\n'); nExtra++; }); }
+      if(!j) return; if(s.post && !j.post) j.post=s.post; if(s.school && (!j.school || j.school==='(স্কুলের নাম ও ঠিকানা লিখুন)') && !j.home) j.school=s.school; if(s.scale && !j.scale){ j.scale=s.scale; if(/\d{3,5}\s*-\s*\d{2,4}\s*-\s*\d{3,5}\s*-/.test(s.scale) && !/\bPB|grade\s*pay|\bG\.?P\b|level/i.test(s.scale)) j.sys='manual'; } if(s.recog.length && !j.recog && !j.home) j.recog=s.recog.join('\n'); nExtra++; }); }
   if(R.notes){ d.querySelectorAll('[data-nt]').forEach(function(c){ if(!c.checked) return; var n=R.notes[+c.getAttribute('data-nt')]; if(!n.date) return;
       var nk=noteKind(n.text); if(nk==='skip') return;
+      if(T.events.some(function(e){ return (e.textL&&e.textL===n.text)||(e.text&&e.text===n.text); })) return;
       if(nk==='verify'){ var ve=verifyEvent(n.text, n.date); ve.id=uid(); ve.seq=Date.now()+nExtra; var dupv=T.events.filter(function(e){ return e.type==='verify' && e.from===ve.from && e.to===ve.to && ve.from; })[0]; if(dupv){ if(ve.di && !dupv.di) dupv.di=ve.di; return; } if(ve.date){ T.events.push(ve); nExtra++; } return; }
-      if(nk==='status'){ var mp=memoParts(n.text), fr=/(?:from|w\.?\s*e\.?\s*f\.?)\s*(\d{1,2}\s*[.\-\/]\s*\d{1,2}\s*[.\-\/]\s*\d{2,4}|\d{1,2}(?:st|nd|rd|th)?\s+[A-Za-z]+,?\s+\d{4})/i.exec(bnDigits(n.text)); T.events.push({id:uid(), seq:Date.now()+nExtra, type:'status', date:(fr&&pdate(fr[1]))||mp.wef||n.date, which:/retain/i.test(n.text)?'appt':(/post/i.test(n.text)&&!/service/i.test(n.text)?'post':'both'), newStatus:'Permanent', memo:mp.no, memoDate:mp.date, by:mp.by, text:n.text}); }
+      if(nk==='status'){ var mp=memoParts(n.text), fr=/(?:from|w\.?\s*e\.?\s*f\.?)\s*(\d{1,2}\s*[.\-\/]\s*\d{1,2}\s*[.\-\/]\s*\d{2,4}|\d{1,2}(?:st|nd|rd|th)?\s+[A-Za-z]+,?\s+\d{4})/i.exec(bnDigits(n.text)); var sd0=(fr&&pdate(fr[1]))||mp.wef||n.date; if(T.events.some(function(e){ return e.type==='status' && Math.abs(SB.pd(e.date)-SB.pd(sd0))<40*86400000; })) return; T.events.push({id:uid(), seq:Date.now()+nExtra, type:'status', date:(fr&&pdate(fr[1]))||mp.wef||n.date, which:/retain/i.test(n.text)?'appt':(/post/i.test(n.text)&&!/service/i.test(n.text)?'post':'both'), newStatus:'Permanent', memo:mp.no, memoDate:mp.date, by:mp.by, text:n.text}); }
       else if(noteToJoin(n.text) && T.events.some(function(e){return e.type==='join';})){ var f=noteToJoin(n.text), js=SB.sortEvents(T.events).filter(function(e){return e.type==='join';});
         var jj=(n.sd && js.filter(function(e){ return e.date===n.sd; })[0]) || js.filter(function(e){ return e.date<=n.date; }).pop() || js[0];
         var ks=Object.keys(f).filter(function(k){ return !jj[k]; }); ks.forEach(function(k){ jj[k]=f[k]; }); if(ks.length<Object.keys(f).length && !ks.length) jj.extra=(jj.extra?jj.extra+'\n':'')+n.text; }
@@ -1263,8 +1277,10 @@ function applyTeacherImport(){
   (function(){ var n0=SB.fullHistory(T,A.S).H.flags.length, guard=0;
     SB.sortEvents(T.events).forEach(function(e){ if(guard++>200 || !/^(inc|benefit)$/.test(e.type) || e.follow===false || e.pay==null || e._exp==null || +e.pay===+e._exp) return;
       e.follow=false; var n1=SB.fullHistory(T,A.S).H.flags.length; if(n1<n0) n0=n1; else delete e.follow; }); })();
+  var lastW=''; d.querySelectorAll('[data-pi]').forEach(function(c){ if(!c.checked) return; var dv=d.querySelector('[data-pd="'+c.getAttribute('data-pi')+'"]').value; if(dv>lastW) lastW=dv; }); (R.releases||[]).forEach(function(r){ if(r.date>lastW) lastW=r.date; });
+  if(lastW && (!T.writtenUpto || lastW>T.writtenUpto)){ var pe=R.pays.filter(function(p){ return p.end && p.date===lastW; })[0]; T.writtenUpto=(pe&&pe.end)||lastW; }
   closeDialog(); A.tab='events'; render(); scheduleSave('T',A.tid);
-  toast('যোগ হলো: তথ্য '+nInfo+', নতুন সারি '+nNew+', বেতন বসানো '+nUpd+(nExtra?', স্কুল/বয়ান '+nExtra:'')+(nLv?', ছুটি '+nLv:''));
+  toast((T.writtenUpto?'বইয়ে লেখা আছে '+SB.fmt(T.writtenUpto,A.S.dateFmt)+' পর্যন্ত ধরা হলো · ':'')+'যোগ হলো: তথ্য '+nInfo+', নতুন সারি '+nNew+', বেতন বসানো '+nUpd+(nExtra?', স্কুল/বয়ান '+nExtra:'')+(nLv?', ছুটি '+nLv:''));
 }
 
 function importGO(file){
