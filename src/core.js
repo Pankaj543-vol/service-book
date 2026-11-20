@@ -111,6 +111,7 @@ function numOrNull(v){ if(v===''||v==null) return null; var n=+String(v).replace
 
 function computeHistory(T,S,LVM){
   LVM=LVM||{};
+  if(S.home) (T.events||[]).forEach(function(e){ if(e.type==='join' && e.home){ if(S.home.school) e.school=S.home.school; if(S.home.recog) e.recog=S.home.recog; } });
   var F=S.dateFmt, pr=P(T), evs=sortEvents(T.events||[]);
   var st={sys:null, pay:null, level:null, idx:-1, post:'Temporary', appt:'Temporary', posting:null, fixes:[]};
   var rows=[], flags=[], payRows=[], postings=[];

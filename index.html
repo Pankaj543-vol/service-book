@@ -34,7 +34,7 @@ header .tl{display:flex;align-items:center;gap:8px;min-width:0}header .sch{font-
 h3{margin:22px 0 4px}h4{margin:14px 0 6px}.okbox{background:#e8f5e9;border:1px solid #b7dfbb;border-radius:10px;padding:10px 12px;font-size:13px;color:#1f5e25;margin-bottom:10px}.chk{display:flex;align-items:center;gap:8px;margin:8px 0;flex-wrap:wrap}.chk input[type=checkbox]{width:20px;height:20px}.imv{flex:1;min-width:140px;font:inherit;padding:7px 8px;border:1px solid #cfc9bc;border-radius:8px}.chk small{width:100%;padding-left:28px;color:#777}.imrow{display:grid;grid-template-columns:28px 1fr 1fr 1fr;gap:6px;align-items:center;margin:8px 0;border-bottom:1px dashed #e3ded2;padding-bottom:6px}.imrow input,.imrow select{font:inherit;font-size:14px;padding:6px;border:1px solid #cfc9bc;border-radius:6px;min-width:0}.imrow small{grid-column:1/-1;font-size:11.5px}.dabig{font-size:16px;margin-top:4px}.tw{overflow-x:auto}.dat{border-collapse:collapse;width:100%;font-size:13.5px;background:#fff}.dat th,.dat td{border:1px solid #e1ddd3;padding:7px 6px;text-align:right;white-space:nowrap}.dat th{background:#f7f5ef;text-align:center}.darow{display:grid;grid-template-columns:1fr 1fr;gap:0 10px}.darow .f:nth-child(3){grid-column:1/-1}.todobox{background:#fff8e1;border:1px solid #f0d58a;border-radius:10px;padding:10px 12px;margin-bottom:10px;font-size:14px;color:#5a4300}.todobox ul{margin:6px 0 0;padding-left:18px}.todobox li{margin:6px 0}.imsch{grid-column:2/-1;font:inherit;font-size:14px;padding:6px;border:1px solid #e0b94d;border-radius:6px;background:#fffdf3}.scard summary{cursor:pointer;padding:2px 0}.scard[open] summary{margin-bottom:6px}.g2{display:grid;grid-template-columns:1fr 1fr;gap:0 10px}@media(max-width:420px){.g2{grid-template-columns:1fr}}.ptab td{vertical-align:top}.ptab input,.ptab select{font:inherit;font-size:13.5px;padding:5px;border:1px solid #cfc9bc;border-radius:6px;width:100%;min-width:90px}.ptab tr.bad td{background:#fdecea}details{margin:12px 0}summary{cursor:pointer;color:#1f3b73}
 #pagesWrap{margin-top:10px}.pfit{overflow:hidden;margin:0 auto 12px;box-shadow:0 1px 4px rgba(0,0,0,.25)}
 #toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:#222;color:#fff;padding:10px 16px;border-radius:20px;font-size:14px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:30;max-width:90vw}#toast.on{opacity:1}
-</style></head><body><div id="app"></div><script>window.SB_STANDALONE=true;window.SB_VERSION="20-11-2026 00:19 (d76b34)";</script><div id="dlg"></div><div id="toast"></div>
+</style></head><body><div id="app"></div><script>window.SB_STANDALONE=true;window.SB_VERSION="20-11-2026 08:54 (b2074d)";</script><div id="dlg"></div><div id="toast"></div>
 <script>// ===== Service Book core logic (pure, no DOM) =====
 var SB = (function(){
 'use strict';
@@ -148,6 +148,7 @@ function numOrNull(v){ if(v===''||v==null) return null; var n=+String(v).replace
 
 function computeHistory(T,S,LVM){
   LVM=LVM||{};
+  if(S.home) (T.events||[]).forEach(function(e){ if(e.type==='join' && e.home){ if(S.home.school) e.school=S.home.school; if(S.home.recog) e.recog=S.home.recog; } });
   var F=S.dateFmt, pr=P(T), evs=sortEvents(T.events||[]);
   var st={sys:null, pay:null, level:null, idx:-1, post:'Temporary', appt:'Temporary', posting:null, fixes:[]};
   var rows=[], flags=[], payRows=[], postings=[];
@@ -811,7 +812,7 @@ function render(){
 // ---------- home ----------
 function homeView(){
   var ids=Object.keys(A.T).sort(function(a,b){ return (A.T[a].name||'').localeCompare(A.T[b].name||''); });
-  var h='<div class="pad"><div class="row gap"><button class="btn pri" data-act="newT">+ নতুন শিক্ষক</button><button class="btn" data-act="settings">⚙ সেটিংস ও পে-ম্যাট্রিক্স</button></div>'+
+  var h='<div class="pad"><div class="row gap"><button class="btn pri" data-act="newT">+ নতুন শিক্ষক</button><button class="btn" data-act="homeSchool">🏫 আমাদের স্কুল</button><button class="btn" data-act="settings">⚙ সেটিংস ও পে-ম্যাট্রিক্স</button></div>'+
     '<div class="row gap wrap" style="margin-top:8px"><button class="btn sm2" data-act="backup">⬇ ব্যাকআপ ফাইল নামাও</button><button class="btn sm2" data-act="restore">⬆ ব্যাকআপ থেকে ফেরত আনো</button></div>'+
     (STANDALONE?'<div class="muted sm">অ্যাপের সংস্করণ: '+esc(window.SB_VERSION||'')+'</div><div class="muted sm">সব তথ্য শুধু এই '+(/Android|iPhone|iPad/i.test(navigator.userAgent)?'ফোনে':'যন্ত্রে')+' সেভ থাকে, কোথাও পাঠানো হয় না। ফোন হারালে বা বদলালে তথ্য যাতে না হারায়, মাঝে মাঝে ব্যাকআপ ফাইল নামিয়ে রাখুন।'+(A.lastBackup?' শেষ ব্যাকআপ: '+esc(A.lastBackup):'')+'</div>':'');
   var empties=ids.filter(function(id){ var T=A.T[id]; return !T.name && !(T.events||[]).length; });
@@ -824,11 +825,11 @@ function homeView(){
 }
 
 // ---------- teacher ----------
-var TABS=[['info','১. ব্যক্তিগত তথ্য'],['schools','🏫 স্কুল'],['paytab','💰 বেতনের সারি'],['events','২. চাকরির ঘটনা'],['leave','৩. ছুটির হিসাব'],['pages','৪. বইয়ের পাতা'],['da','৫. বেতন ও DA']];
+var TABS=[['info','১. ব্যক্তিগত তথ্য'],['docs','📂 নথি জমা'],['schools','🏫 স্কুল'],['paytab','💰 বেতনের সারি'],['events','২. চাকরির ঘটনা'],['leave','৩. ছুটির হিসাব'],['pages','৪. বইয়ের পাতা'],['da','৫. বেতন ও DA']];
 function teacherView(){
   var T=A.T[A.tid]; if(!T){ A.view='home'; return homeView(); }
   var h='<div class="tabs">'+TABS.map(function(t){ return '<button class="tab'+(A.tab===t[0]?' on':'')+'" data-act="tab" data-tab="'+t[0]+'">'+t[1]+'</button>'; }).join('')+'</div><div class="pad">';
-  if(A.tab==='info') h+=infoForm(T); else if(A.tab==='schools') h+=schoolsView(T); else if(A.tab==='paytab') h+=payTableView(T); else if(A.tab==='events') h+=eventsView(T); else if(A.tab==='leave') h+=leaveView(T); else if(A.tab==='da') h+=daView(T); else h+=pagesView(T);
+  if(A.tab==='info') h+=infoForm(T); else if(A.tab==='docs') h+=docsView(T); else if(A.tab==='schools') h+=schoolsView(T); else if(A.tab==='paytab') h+=payTableView(T); else if(A.tab==='events') h+=eventsView(T); else if(A.tab==='leave') h+=leaveView(T); else if(A.tab==='da') h+=daView(T); else h+=pagesView(T);
   return h+'</div>';
 }
 function fld(lbl,key,val,type,hint,extra){
@@ -1064,7 +1065,9 @@ document.addEventListener('click',function(ev){
   var b=ev.target.closest('[data-act]'); if(!b) return; var act=b.getAttribute('data-act'), id=b.getAttribute('data-id');
   if(act==='home'){ A.view='home'; render(); }
   else if(act==='settings'){ A.view='settings'; render(); }
-  else if(act==='newT'){ var nid=uid(); A.T[nid]={id:nid, name:'', sex:'M', desigShort:'A.T.', dobSource:'West Bengal Board of Secondary Education', events:[], leave:{ov:{},notes:{}}}; pendingNew[nid]=1; A.tid=nid; A.view='teacher'; A.tab='info'; render(); scheduleSave('T',nid); }
+  else if(act==='homeSchool'){ homeSchoolDialog(); }
+  else if(act==='docUp'){ docUpload(b.getAttribute('data-doc')); }
+  else if(act==='newT'){ var nid=uid(); A.T[nid]={id:nid, name:'', sex:'M', desigShort:'A.T.', dobSource:'West Bengal Board of Secondary Education', events:[], leave:{ov:{},notes:{}}}; if(A.S.home&&A.S.home.school) A.T[nid]._draft={0:{home:true}}; pendingNew[nid]=1; A.tid=nid; A.view='teacher'; A.tab='info'; render(); scheduleSave('T',nid); }
   else if(act==='delTid'){ ev.stopPropagation(); var T0=A.T[id]; ask('“'+(T0&&T0.name||'নাম নেই')+'” — এই শিক্ষকের সব তথ্য মুছে যাবে, ফেরত আনা যাবে না। মুছবেন?',function(){ delete A.T[id]; delete pendingNew[id]; render(); if(A.mode==='db') doSave('del',id); else lsPut(); toast('মুছে ফেলা হলো'); }); return; }
   else if(act==='delEmpty'){ var em=Object.keys(A.T).filter(function(k){ var t=A.T[k]; return !t.name && !(t.events||[]).length; }); ask('নাম ছাড়া, কোনো ঘটনা ছাড়া '+em.length+'টি খালি খাতা মুছে যাবে। মুছবেন?',function(){ em.forEach(function(k){ delete A.T[k]; delete pendingNew[k]; if(A.mode==='db') doSave('del',k); }); if(A.mode!=='db') lsPut(); render(); toast(em.length+'টি খালি খাতা মোছা হলো'); }); return; }
   else if(act==='openT'){ A.tid=id; A.view='teacher'; A.tab='events'; render(); }
@@ -1123,6 +1126,7 @@ document.addEventListener('input',function(ev){
   else if(f==='L'){ var L=A.S.levels[+form.getAttribute('data-i')]; if(k2==='cells'){ L.cells=v.split(/[^0-9]+/).filter(Boolean).map(Number); } else L[k2]=v; scheduleSave('S'); }
 });
 document.addEventListener('change',function(ev){ var t0=ev.target;
+  if(t0.hasAttribute && t0.hasAttribute('data-home')){ slotUpdate(+t0.getAttribute('data-home'),'home',t0.checked?true:''); var yh=window.scrollY; render(); window.scrollTo(0,yh); return; }
   if(t0.hasAttribute && t0.hasAttribute('data-sk')){ var openIdx=[].map.call(document.querySelectorAll('details.scard'),function(d,i){return d.open?i:-1;}).filter(function(i){return i>=0;}); var rr=slotUpdate(+t0.getAttribute('data-si'),t0.getAttribute('data-sk'),t0.value); if(rr==='rerender' || t0.type==='date' || t0.tagName==='SELECT'){ var y=window.scrollY; render(); document.querySelectorAll('details.scard').forEach(function(d,i){ if(openIdx.indexOf(i)>=0) d.open=true; }); window.scrollTo(0,y); } return; }
   if(t0.hasAttribute && t0.hasAttribute('data-pe')){ var Tq=A.T[A.tid], eq=(Tq.events||[]).filter(function(x){return x.id===t0.getAttribute('data-pe');})[0]; if(eq){ var fq=t0.getAttribute('data-pf'); if(t0.value==='') delete eq[fq]; else eq[fq]=t0.value; scheduleSave('T',A.tid); var y2=window.scrollY; render(); window.scrollTo(0,y2); } return; } if(t0.hasAttribute && t0.hasAttribute('data-pk') && IMP && IMP.R){ var ii=+t0.getAttribute('data-pk'); IMP.R.pays[ii].kind=t0.value; var dlgb=$('#dlg .dlgb'), st0=dlgb?dlgb.scrollTop:0; snapshotImport(); drawTeacherImport(); var nb=$('#dlg .dlgb'); if(nb) nb.scrollTop=st0; return; } if(ev.target.tagName==='SELECT') ev.target.dispatchEvent(new Event('input',{bubbles:true})); });
 window.addEventListener('resize',function(){ if(A.view==='teacher'&&A.tab==='pages') drawPages(); });
@@ -1778,7 +1782,7 @@ function schoolsView(T){
   slots.forEach(function(s,i){ var j=s.join||{}, r=s.rel||{};
     var title=(ORD_BN[i]||((i+1)+'তম'))+' স্কুল', sub=j.date?(SB.fmt(j.date,A.S.dateFmt)+' থেকে '+(r.date?SB.fmt(r.date,A.S.dateFmt):'এখনও চলছে')):'এখনও লেখা হয়নি';
     var relKind=r.type==='resign'?'resign':(r.date?'release':'');
-    h+='<details class="card scard"'+(i===0||j.date?' open':'')+'><summary><b>'+title+'</b> <span class="muted sm">— '+esc(j.school?j.school.split('\n')[0]:'')+' ('+sub+')</span></summary><div class="form"><button class="btn sm2" data-act="slotDocs" data-si="'+i+'">📄 এই স্কুলের কাগজ থেকে ভরো</button><small class="muted">যোগদান/বদলি/অনুমোদনের PDF বা ছবি (কয়েকটা একসঙ্গে)। টাইপ করা কাগজ ভালো পড়ে, হাতের লেখা নয়।</small>'+
+    h+='<details class="card scard"'+(i===0||j.date?' open':'')+'><summary><b>'+title+'</b> <span class="muted sm">— '+esc(j.school?j.school.split('\n')[0]:'')+' ('+sub+')</span></summary><div class="form"><button class="btn sm2" data-act="slotDocs" data-si="'+i+'">📄 এই স্কুলের কাগজ থেকে ভরো</button><small class="muted">যোগদান/বদলি/অনুমোদনের PDF বা ছবি (কয়েকটা একসঙ্গে)। টাইপ করা কাগজ ভালো পড়ে, হাতের লেখা নয়।</small>'+(A.S.home&&A.S.home.school?'<label class="chk"><input type="checkbox" data-home="'+i+'"'+((j.home||(!j.date&&((T._draft||{})[i]||{}).home))?' checked':'')+'> <span><b>এটা আমাদের স্কুল</b> — নাম, ঠিকানা আর স্বীকৃতি “🏫 আমাদের স্কুল” থেকে বসবে</span></label>':'')+
       sfld(i,'স্কুলের নাম ও পুরো ঠিকানা','school',j.school==='(স্কুলের নাম ও ঠিকানা লিখুন)'?'':j.school,'textarea')+
       '<div class="g2">'+sfld(i,'পদ','post',j.post||'Assistant Teacher')+sfld(i,'যোগদানের তারিখ','date',j.date,'date')+'</div>'+
       '<div class="g2">'+sfld(i,'যোগদানের বেতন','pay',j.pay,'number',null,i>0?'খালি রাখলে আগের স্কুলের শেষ বেতন বসবে':'')+sfld(i,'বেতনের হিসাব কোন নিয়মে','sys',j.sys||(i>0?'':'2009'),'select',(i>0?[['','আগের স্কুলের মতোই (সাধারণত এটাই)']]:[]).concat([['2009','ROPA 2009 (3%, 10-এ রাউন্ড)'],['manual','নিজে বসাব (পুরনো স্কেল)']]).concat(levelOpts()))+'</div>'+
@@ -1808,7 +1812,7 @@ function slotUpdate(i,key,val){
     if(!r){ r={id:uid(), seq:Date.now(), type:rk==='resign'?'resign':'release', date:rd}; T.events.push(r); }
     r.type=rk==='resign'?'resign':'release'; r.date=rd; if(rr) r.reason=rr; else delete r.reason;
     scheduleSave('T',A.tid); return key==='relDate'?'rerender':''; }
-  if(key==='pay' && !val) delete j.pay; else j[key]=val;
+  if((key==='pay'||key==='home') && !val) delete j[key]; else j[key]=val;
   scheduleSave('T',A.tid); return key==='date'?'rerender':'';
 }
 
@@ -1819,9 +1823,10 @@ function docFields(text){ var t=bnDigits(String(text||'')).replace(/\r/g,''), f=
   // the school: a labelled name, "transferred/posted to X", or the first line naming a school
   m=/(?:name\s+of\s+(?:the\s+)?(?:new\s+)?(?:school|institution)|(?:transferred|posted|allotted)\s+to)\s*[:\-]?\s*([^\n]*?(?:school|institution|vidyalaya|vidyapith|vidyamandir|madrasah|siksha\s*niketan)[^\n]*)/i.exec(t);
   var schLine=m?m[1]:'';
-  if(!schLine){ t.split('\n').some(function(L){ if(FR.school.test(L) && !/\bschools\b|inspector|D\.?\s*I\.?\s*of|recogni|council|board/i.test(L) && L.trim().length<120){ schLine=L; return true; } return false; }); }
+  if(!schLine){ t.split('\n').some(function(L){ if(FR.school.test(L) && !/\bschools\b|inspector|D\.?\s*I\.?\s*of|recogni|council|board|service\s+commission|education/i.test(L) && L.trim().length<120){ schLine=L; return true; } return false; }); }
   if(schLine){ var ls=t.split('\n'), at=ls.findIndex(function(x){ return x.indexOf(schLine)>=0; }), sch=schLine.replace(/^.*?(?:transferred|posted|allotted)\s+to\s*/i,'').replace(/\s*(?:with effect|w\.?e\.?f|on and from|vide)\b.*$/i,'').trim();
     for(var k=at+1;k<ls.length && k<at+4;k++){ if(/^\s*(?:P\.?\s*O\.?|P\.?\s*S\.?|Dist|Vill|Pin|Block|Sub[-\s]?div)\b/i.test(ls[k])) sch+=', '+ls[k].trim(); else break; }
+    sch=sch.replace(/^.*?\b(?:in|at|to)\s+(?=[^,]{0,60}?(?:school|institution|vidyalaya|vidyapith|madrasah))/i,'');
     sch=sch.replace(/\s*(?:with\s+immediate\s+effect|with\s+effect|w\.?\s*e\.?\s*f\.?|on\s+and\s+from|vide)\b.*$/i,'');
     f.school=sch.split(/\s*,\s*/).filter(function(x){ return x.trim(); }).join(',\n').replace(/[.,;]+$/,''); }
   m=/(?:joined|joining|date\s+of\s+joining|resumed)[^0-9]{0,40}?(\d{1,2}\s*[.\-\/]\s*\d{1,2}\s*[.\-\/]\s*\d{2,4}|\d{1,2}(?:st|nd|rd|th)?\s+[A-Za-z]+,?\s+\d{4})/i.exec(flat); if(m) f.date=pdate(m[1]);
@@ -1873,6 +1878,129 @@ function showDocFields(si,texts,scanned){
     if(f._level && vals.scale && A.S.levels.some(function(L){ return L.id===f._level; })) slotUpdate(si,'sys',f._level);
     Object.keys(vals).forEach(function(k){ if(k!=='date' && vals[k]){ slotUpdate(si,k,vals[k]); n++; } });
     closeDialog(); render(); toast((ORD_BN[si]||'')+' স্কুলে বসল '+(n+(vals.date?1:0))+'টি ঘর'); };
+}
+
+// ---------- reading several papers (offline) ----------
+function readFiles(cb){
+  var inp=document.createElement('input'); inp.type='file'; inp.multiple=true; inp.accept='application/pdf,image/*'; inp.style.display='none'; document.body.appendChild(inp);
+  inp.onchange=function(){ var files=[].slice.call(inp.files||[]); document.body.removeChild(inp); if(!files.length) return;
+    var texts=[], low=false, k=0;
+    (function next(){ if(k>=files.length){ closeDialog(); return cb(texts, low); }
+      busy('কাগজ পড়ছি… ('+(k+1)+'/'+files.length+')');
+      READER.read(files[k],prog).then(function(doc){ texts.push(READER.toLines(doc).map(function(l){ return l.text; }).join('\n')); if((doc.scanned||[]).length) low=true; k++; next(); })
+      .catch(function(){ toast('“'+files[k].name+'” পড়া যায়নি'); k++; next(); }); })(); };
+  inp.click(); }
+
+// ---------- our school (one profile for every teacher) ----------
+function homeSchoolDialog(pre){
+  var H=Object.assign({}, A.S.home||{}, pre||{});
+  var d=$('#dlg'); d.innerHTML='<div class="dlgbox"><div class="dlgh"><b>🏫 আমাদের স্কুল</b><button class="ib" data-act="closeD">✕</button></div><div class="dlgb">'+
+    '<div class="muted sm">একবার লিখলে যে শিক্ষকের স্কুলের ঘরে “এটা আমাদের স্কুল” টিক আছে, সবার বইয়ে এগুলো বসবে। পরে বদলালে সবার বইয়ে একসঙ্গে বদলাবে।</div>'+
+    '<button class="btn sm2" id="hsDocs">📄 স্কুলের কাগজ থেকে ভরো (স্বীকৃতির চিঠি ইত্যাদি)</button>'+
+    '<label class="f form"><span>স্কুলের নাম ও পুরো ঠিকানা</span><textarea id="hsSchool" rows="4">'+esc(H.school||'')+'</textarea></label>'+
+    '<label class="f form"><span>স্কুলের স্বীকৃতির ইতিহাস (প্রতি লাইনে একটা)</span><textarea id="hsRecog" rows="6">'+esc(H.recog||'')+'</textarea></label>'+
+    '<label class="f form"><span>অনুমোদন দেওয়ার অফিস</span><input id="hsAppr" value="'+esc(H.approver||'')+'" placeholder="যেমন D.I. of Schools (SE), Hooghly"></label>'+
+    '</div><div class="dlgf"><button class="btn" data-act="closeD">বাতিল</button><button class="btn pri" id="hsSave">সেভ করুন</button></div></div>';
+  d.classList.add('on');
+  $('#hsDocs').onclick=function(){ var cur={school:$('#hsSchool').value, recog:$('#hsRecog').value, approver:$('#hsAppr').value};
+    readFiles(function(texts){ var t=texts.join('\n'), f=docFields(t), rec=bnDigits(t).split('\n').filter(function(L){ return FR.recog.test(L); }).map(function(L){ return L.trim(); });
+      var ap=/((?:district|additional\s+district|assistant)\s+inspector\s+of\s+schools[^,\n]*(?:,\s*[A-Za-z]+)?)/i.exec(t);
+      homeSchoolDialog({school:cur.school||f.school||'', recog:(cur.recog?cur.recog+'\n':'')+rec.filter(function(r){ return (cur.recog||'').indexOf(r)<0; }).join('\n'), approver:cur.approver||(ap?ap[1]:'')});
+      toast('কাগজ থেকে বসানো হলো — মিলিয়ে নিয়ে সেভ করুন'); }); };
+  $('#hsSave').onclick=function(){ A.S.home={school:$('#hsSchool').value.trim(), recog:$('#hsRecog').value.trim().replace(/\n{2,}/g,'\n'), approver:$('#hsAppr').value.trim()}; scheduleSave('S'); closeDialog(); render(); toast('আমাদের স্কুল সেভ হলো'); };
+}
+
+// ---------- 📂 a teacher's papers, one slot per kind ----------
+var DOCS=[
+ {id:'mp', name:'মাধ্যমিকের অ্যাডমিট / সার্টিফিকেট', what:'জন্মতারিখ, নাম', kind:'info'},
+ {id:'qual', name:'যোগ্যতার সার্টিফিকেট (B.A./M.A./B.Ed.…)', what:'যোগ্যতা (a) ও (b)', kind:'info'},
+ {id:'med', name:'মেডিক্যাল ফিটনেস সার্টিফিকেট', what:'উচ্চতা, শনাক্তকরণ চিহ্ন', kind:'info'},
+ {id:'rec', name:'SSC/WBSSC-র সুপারিশপত্র', what:'কার মাধ্যমে নিয়োগ, মেমো, তারিখ', kind:'join'},
+ {id:'appt', name:'নিয়োগপত্র / M.C. রেজোলিউশন', what:'রেজোলিউশন, পদ, বেতনক্রম', kind:'join'},
+ {id:'joinr', name:'যোগদান রিপোর্ট', what:'যোগদানের তারিখ, বেতন', kind:'join'},
+ {id:'appr', name:'D.I./A.D.I.-র অনুমোদন', what:'অনুমোদন কে দিয়েছেন, মেমো, তারিখ, w.e.f.', kind:'join'},
+ {id:'sanc', name:'পদ মঞ্জুরির চিঠি', what:'পদ মঞ্জুরির তথ্য', kind:'join'},
+ {id:'conf', name:'স্থায়ীকরণ / Confirmation-এর চিঠি', what:'“স্থায়ী হওয়া” ঘটনা', kind:'status'},
+ {id:'trans', name:'বদলির অর্ডার (Utsashree/Mutual), রিলিজ, LPC', what:'আগের স্কুল ছাড়া, নতুন স্কুলে যোগদান, শেষ বেতন', kind:'join'},
+ {id:'fix', name:'পে-ফিক্সেশন / ROPA-র কাগজ', what:'ফিক্সেশনের তারিখ, বেতন, লেভেল', kind:'fix'},
+ {id:'lv', name:'ছুটির মঞ্জুরি আদেশ (ML/HAP)', what:'ছুটির হিসাবে দিন', kind:'leave'},
+ {id:'old', name:'আগের স্কুলের সার্ভিস বুকের পাতা (হাতে লেখা)', what:'Gemini দিয়ে টাইপ করে পেস্ট', kind:'gem'}];
+function docsView(T){ var got=T.docs||{};
+  var h='<div class="muted sm">যে কাগজ আছে, তার পাশের বোতাম চেপে PDF বা ফোনের ছবি দিন (একসঙ্গে কয়েকটা দেওয়া যায়)। অ্যাপ ইন্টারনেট ছাড়াই পড়ে “যা পাওয়া গেল” দেখাবে — মিলিয়ে “বসাও” চাপবেন। টাইপ করা কাগজ ভালো পড়ে; হাতে লেখা কাগজ ঠিক পড়ে না। কাগজটা ফোনে জমা থাকে না, শুধু তথ্য বসে।</div>';
+  DOCS.forEach(function(D,i){ h+='<div class="card"><div class="row" style="justify-content:space-between;align-items:center;gap:8px"><div><b>'+(i+1)+'. '+D.name+'</b>'+(got[D.id]?' <span class="ok">✅ '+esc(SB.fmt(got[D.id],A.S.dateFmt))+'</span>':'')+'<br><small class="muted">যা বসবে: '+D.what+'</small></div><button class="btn sm2" data-act="docUp" data-doc="'+D.id+'">'+(D.kind==='gem'?'✎ পেস্ট করুন':'📄 আপলোড')+'</button></div></div>'; });
+  return h; }
+function docUpload(id){ var D=DOCS.filter(function(x){ return x.id===id; })[0]; if(!D) return;
+  if(D.kind==='gem'){ pasteDialog(); return; }
+  readFiles(function(texts,low){ docDialog(D, texts, low); }); }
+function docExtract(D,t){ t=bnDigits(t); var flat=t.replace(/\s*\n\s*/g,' '), f={}, m;
+  if(D.id==='mp'){ m=new RegExp('(?:date\\s+of\\s+birth|d\\.?\\s*o\\.?\\s*b\\.?|born\\s+on|জন্ম(?:\\s*তারিখ)?)[^0-9A-Za-z]{0,20}'+'(\\d{1,2}\\s*[.\\-\\/]\\s*\\d{1,2}\\s*[.\\-\\/]\\s*\\d{2,4}|\\d{1,2}(?:st|nd|rd|th)?\\s+[A-Za-z]+,?\\s+\\d{4})','i').exec(flat);
+      var dob=m?pdate(m[1]):''; if(!dob){ var ds=READER.dates(flat).filter(function(x){ return x.iso>='1950-01-01' && x.iso<'2008-01-01'; }); if(ds.length) dob=ds[0].iso; } if(dob) f.dob=dob;
+      m=/\bname(?:\s+of\s+the\s+(?:candidate|examinee))?\s*[:\-]\s*([A-Za-z][A-Za-z .]{3,45})/i.exec(t); if(m) f.name=m[1].trim(); }
+  if(D.id==='qual'){ var deg=[], re=/\b(B\.?\s*A\.?|B\.?\s*Sc\.?|B\.?\s*Com\.?|M\.?\s*A\.?|M\.?\s*Sc\.?|M\.?\s*Com\.?|B\.?\s*Ed\.?|M\.?\s*Ed\.?|D\.?\s*El\.?\s*Ed\.?|Ph\.?\s*D\.?)(?=[\s,.(]|$)/g, mm;
+      while((mm=re.exec(flat))){ var dgr=mm[1].replace(/\s+/g,'').replace(/\.?$/,'.'); if(deg.indexOf(dgr)<0) deg.push(dgr); }
+      var bed=deg.filter(function(x){ return /^B\.?Ed/i.test(x); })[0], rest=deg.filter(function(x){ return !/^B\.?Ed/i.test(x); });
+      if(rest.length) f.qualEntry=rest.join(', ');
+      if(bed){ var bd=new RegExp('(?:result|publication|declared|passed)[^0-9]{0,30}(\\d{1,2}\\s*[.\\-\\/]\\s*\\d{1,2}\\s*[.\\-\\/]\\s*\\d{2,4})','i').exec(flat); f.qualLater='B.Ed.'+(bd?' on '+SB.fmt(pdate(bd[1]),A.S.dateFmt):''); } }
+  if(D.id==='med'){ m=/(\d{3}(?:\.\d+)?)\s*c\.?\s*m\b/i.exec(flat); if(m) f.height=m[1]+' C.M.';
+      m=/(?:identification\s*marks?|personal\s*marks?|marks?\s+of\s+identification)\s*[:\-]?\s*([^\n]{3,80})/i.exec(t)||/((?:a\s+)?(?:mole|scar|cut\s*mark|black\s*spot)[^\n.,;]{0,50})/i.exec(t); if(m) f.idMarks=m[1].trim(); }
+  if(D.kind==='join'){ f=docFields(t);
+      if(D.id==='sanc'||/sanction/i.test(flat)){ m=/[^.\n]*sanction[^.\n]*/i.exec(t); if(m) f.sanction=m[0].trim(); }
+      if(D.id==='trans'){ m=new RegExp('(?:released|relieved)[^.]{0,80}?(?:on|w\\.?e\\.?f\\.?|from)\\s*'+'(\\d{1,2}\\s*[.\\-\\/]\\s*\\d{1,2}\\s*[.\\-\\/]\\s*\\d{2,4}|\\d{1,2}(?:st|nd|rd|th)?\\s+[A-Za-z]+,?\\s+\\d{4})','i').exec(flat); if(m) f.relDate=pdate(m[1]);
+        if(/utsa?shree/i.test(flat)) f.relReason="Transferred through 'Utsashree'"; else if(/mutual/i.test(flat)) f.relReason='Mutual transfer'; } }
+  if(D.kind==='status'){ m=new RegExp('(?:with\\s+effect\\s+from|w\\.?\\s*e\\.?\\s*f\\.?|from|on\\s+and\\s+from)\\s*'+'(\\d{1,2}\\s*[.\\-\\/]\\s*\\d{1,2}\\s*[.\\-\\/]\\s*\\d{2,4}|\\d{1,2}(?:st|nd|rd|th)?\\s+[A-Za-z]+,?\\s+\\d{4})','i').exec(flat); var mp=memoParts(flat);
+      if(m) f.date=pdate(m[1]); if(mp.no) f.memo=mp.no; if(mp.date) f.memoDate=mp.date; m=/(?:by|office\s+of\s+the)\s+((?:the\s+)?(?:district|additional\s+district|assistant)?\s*inspector\s+of\s+schools[^,\n]*(?:,\s*[A-Za-z]+)?|D\.?\s*I\.?[^,\n]{0,30}|A\.?\s*D\.?\s*I\.?[^,\n]{0,30})/i.exec(flat); if(m) f.by=m[1].trim();
+      f.which=/retain/i.test(flat)?'appt':(/\bpost\b/i.test(flat)&&!/service/i.test(flat)?'post':'both'); }
+  if(D.kind==='fix'){ m=/(?:fixed\s+at|fixed\s+(?:his|her)\s+pay\s+at|pay\s+(?:is\s+)?(?:notionally\s+)?fixed\s+at)\s*(?:rs\.?)?\s*(\d{1,3}(?:,\d{3})+|\d{4,6})/i.exec(flat); if(m) f.pay=m[1].replace(/,/g,'');
+      m=new RegExp('(?:fixed\\s+at[^0-9]{0,15}[\\d,]+\\s*(?:/-)?\\s*(?:on|w\\.?e\\.?f\\.?)|on|w\\.?\\s*e\\.?\\s*f\\.?)\\s*'+'(\\d{1,2}\\s*[.\\-\\/]\\s*\\d{1,2}\\s*[.\\-\\/]\\s*\\d{2,4}|\\d{1,2}(?:st|nd|rd|th)?\\s+[A-Za-z]+,?\\s+\\d{4})','i').exec(flat); if(m) f.date=pdate(m[1]);
+      m=/\blevel\s*[-:]?\s*(\d+[A-Z]?)/i.exec(flat); if(m) f.level='L'+m[1].toUpperCase();
+      m=/G\.?\s*O\.?\s*No\.?[^\n]{0,70}?(?:dt|dated)\.?\s*[:\-]?\s*\d{1,2}\s*[.\-\/]\s*\d{1,2}\s*[.\-\/]\s*\d{2,4}/i.exec(flat); if(m) f.go=m[0].trim();
+      m=/actual(?:ly)?\s*(?:paid|benefit)[^0-9]{0,25}(\d{1,2}\s*[.\-\/]\s*\d{1,2}\s*[.\-\/]\s*\d{2,4})/i.exec(flat); if(m) f.actualFrom=pdate(m[1]); }
+  if(D.kind==='leave'){ var re2=new RegExp('from\\s+'+'(\\d{1,2}\\s*[.\\-\\/]\\s*\\d{1,2}\\s*[.\\-\\/]\\s*\\d{2,4}|\\d{1,2}(?:st|nd|rd|th)?\\s+[A-Za-z]+,?\\s+\\d{4})'+'\\s+to\\s+'+'(\\d{1,2}\\s*[.\\-\\/]\\s*\\d{1,2}\\s*[.\\-\\/]\\s*\\d{2,4}|\\d{1,2}(?:st|nd|rd|th)?\\s+[A-Za-z]+,?\\s+\\d{4})','gi'), m2, days=0, from='';
+      while((m2=re2.exec(flat))){ var a=pdate(m2[1]), b=pdate(m2[2]); if(a&&b&&b>=a){ days+=Math.round((SB.pd(b)-SB.pd(a))/86400000)+1; if(!from) from=a; } }
+      if(!days){ m=/for\s+(\d{1,3})\s*(?:\(\w+\)\s*)?days/i.exec(flat); if(m) days=+m[1]; var d1=READER.dates(flat); if(d1.length) from=d1[0].iso; }
+      if(days){ f.from=from; f.days=String(days); } f.type=/half\s*(?:average\s*)?pay|h\.?\s*a\.?\s*p/i.test(flat)?'hap':'ml'; }
+  Object.keys(f).forEach(function(k){ if(!f[k]) delete f[k]; }); return f; }
+var DOCLBL={dob:'জন্ম তারিখ',name:'নাম',qualEntry:'যোগ্যতা (চাকরিতে ঢোকার সময়)',qualLater:'পরে বাড়া যোগ্যতা ও তারিখ',height:'উচ্চতা',idMarks:'শনাক্তকরণ চিহ্ন',
+  sanction:'পদ মঞ্জুরির তথ্য',relDate:'আগের স্কুল ছাড়ার তারিখ',relReason:'আগের স্কুল ছাড়ার কারণ',memo:'মেমো নম্বর',memoDate:'মেমোর তারিখ',by:'কে দিয়েছেন',which:'কী স্থায়ী হলো (both/post/appt)',
+  level:'লেভেল',go:'G.O.',actualFrom:'আসল টাকা কবে থেকে',from:'ছুটি শুরুর তারিখ',days:'কত দিন',type:'ধরন (ml/hap)'};
+function docDialog(D,texts,low){
+  var T=A.T[A.tid], f=docExtract(D,texts.join('\n\n')), slots=schoolSlots(T), lastJ=-1; slots.forEach(function(s,i){ if(s.join) lastJ=i; });
+  var tgt=D.kind==='join'?(D.id==='trans'?lastJ+1:Math.max(lastJ,0)):-1;
+  if(D.kind==='status'||D.kind==='fix'||D.kind==='join'){ f.date=f.date||''; }
+  var lbl=function(k){ return DOCLBL[k]||((DOCF.filter(function(x){return x[0]===k;})[0]||[0,k])[1]); };
+  var keys=Object.keys(f).filter(function(k){ return k.charAt(0)!=='_'; });
+  var h='<div class="dlgbox"><div class="dlgh"><b>'+esc(D.name)+' — যা পাওয়া গেল</b><button class="ib" data-act="closeD">✕</button></div><div class="dlgb">';
+  if(low) h+='<div class="flagbox">কাগজটা ছবি/স্ক্যান — লেখা আন্দাজে পড়া হয়েছে। প্রতিটা নম্বর আর তারিখ মিলিয়ে নিন।</div>';
+  if(D.kind==='join') h+='<label class="f form"><span>কোন স্কুলের ঘরে বসবে</span><select id="docSlot">'+slots.map(function(s,i){ return '<option value="'+i+'"'+(i===tgt?' selected':'')+'>'+(ORD_BN[i]||(i+1))+' স্কুল — '+esc(s.join?(s.join.school||'').split('\n')[0]+' ('+SB.fmt(s.join.date,A.S.dateFmt)+')':'খালি ঘর')+'</option>'; }).join('')+'</select></label>';
+  if(!keys.length) h+='<div class="empty">কাজের মতো কিছু খুঁজে পাওয়া গেল না। কাগজ হাতে লেখা হলে “Gemini থেকে পেস্ট” দিয়ে চেষ্টা করুন।</div>';
+  keys.forEach(function(k){ var v=String(f[k]), isD=/date|Wef$|^dob$|^from$|actualFrom|relDate/i.test(k)&&!/relReason/.test(k), big=/school|scale|sanction|go|idMarks|qual/.test(k);
+    var cur=D.kind==='info'?(T[k]||''):'';
+    h+='<label class="chk"><input type="checkbox" data-xk="'+k+'"'+(cur&&cur!==v?'':' checked')+'> <span>'+lbl(k)+'</span> '+(big?'<textarea class="imv" rows="2" data-xv="'+k+'">'+esc(v)+'</textarea>':'<input class="imv" data-xv="'+k+'" type="'+(isD?'date':'text')+'" value="'+esc(v)+'">')+(cur&&cur!==v?'<small>এখন আছে: '+esc(cur)+'</small>':'')+((k==='date'&&!v)?'<small><b>কাগজে তারিখ পাওয়া যায়নি — নিজে লিখুন</b></small>':'')+'</label>'; });
+  h+='<details><summary>কাগজের পুরো পড়া লেখা</summary><textarea readonly rows="8" style="width:100%;font-size:12px">'+esc(texts.join('\n\n'))+'</textarea></details></div>';
+  h+='<div class="dlgf"><button class="btn" data-act="closeD">বাতিল</button>'+(keys.length?'<button class="btn pri" id="docApply">টিক দেওয়াগুলো বসাও</button>':'')+'</div></div>';
+  var dl=$('#dlg'); dl.innerHTML=h; dl.classList.add('on');
+  var go=$('#docApply'); if(!go) return;
+  go.onclick=function(){ var v={}; dl.querySelectorAll('[data-xk]').forEach(function(c){ if(!c.checked) return; var k=c.getAttribute('data-xk'); v[k]=dl.querySelector('[data-xv="'+k+'"]').value.trim(); });
+    var n=0;
+    if(D.kind==='info'){ Object.keys(v).forEach(function(k){ if(v[k]){ T[k]=v[k]; n++; } }); }
+    else if(D.kind==='join'){ var si=+$('#docSlot').value, sj=schoolSlots(T)[si]||{};
+      if(!sj.join && !v.date){ toast('এই ঘরে আগে যোগদানের তারিখ লাগবে — তালিকায় তারিখ লিখুন বা অন্য স্কুল বাছুন'); return; }
+      if(v.date) slotUpdate(si,'date',v.date);
+      if(f._level && v.scale && A.S.levels.some(function(L){ return L.id===f._level; })) slotUpdate(si,'sys',f._level);
+      Object.keys(v).forEach(function(k){ if(['date','relDate','relReason'].indexOf(k)<0 && v[k]){ slotUpdate(si,k,v[k]); n++; } });
+      if(v.relDate && si>0){ slotUpdate(si-1,'relDate',v.relDate); slotUpdate(si-1,'relKind','release'); if(v.relReason) slotUpdate(si-1,'relReason',v.relReason); n++; }
+      if(v.date) n++; }
+    else if(D.kind==='status'){ if(!v.date){ toast('তারিখ লিখুন'); return; } T.events.push({id:uid(), seq:Date.now(), type:'status', date:v.date, which:v.which||'both', newStatus:'Permanent', memo:v.memo||'', memoDate:v.memoDate||'', by:v.by||''}); n++; }
+    else if(D.kind==='fix'){ if(!v.date||!v.pay){ toast('তারিখ আর বেতন লাগবে'); return; }
+      var e={id:uid(), seq:Date.now(), type:v.date<'2016-01-01'?'fix2009':'fix', date:v.date, pay:v.pay};
+      if(e.type==='fix'){ e.commission=guessComm(v.date)||'ROPA-2019'; applyComm(e); e.pay=v.pay; e.date=v.date; if(v.level) e.level=v.level; if(v.go) e.go=v.go; if(v.actualFrom) e.actualFrom=v.actualFrom; }
+      else { e.showDate=v.date; if(v.go) e.go=v.go; }
+      T.events.push(e); n++; }
+    else if(D.kind==='leave'){ if(!v.from||!v.days){ toast('তারিখ আর দিন লাগবে'); return; } T.leave=T.leave||{ov:{},notes:{}}; T.leave.ov=T.leave.ov||{};
+      var FH=SB.fullHistory(T,A.S), per=FH.LV.rows.filter(function(r){ return r.kind==='leave' && r.from<=v.from && r.to>=v.from; })[0];
+      if(!per){ toast('এই তারিখ ছুটির হিসাবের কোনো বছরে পড়ছে না — আগে যোগদান বসান'); return; }
+      var o=T.leave.ov[per.key]=T.leave.ov[per.key]||{}, fld=(v.type==='hap')?'t8':'t7'; o[fld]=String((+o[fld]||0)+(+v.days)); n++; }
+    T.docs=T.docs||{}; T.docs[D.id]=SB.todayStr(); scheduleSave('T',A.tid); closeDialog(); render(); toast(n+'টি ঘর বসল'); };
 }
 var PAYKINDS=[['inc','ইনক্রিমেন্ট'],['benefit','১০ বছর/CAS'],['payrow','অন্য সারি'],['fix','পে-রিভিশন'],['fix2009','ROPA-2009 ফিক্সেশন'],['join','যোগদান']];
 function payTableView(T){
